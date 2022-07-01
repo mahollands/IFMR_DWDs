@@ -9,7 +9,7 @@ from mcmc_functions import logpost_DWDs
 from DWD_sets import bad_DWDs_220701 as dont_use_DWDs
 
 N_CPU = 10
-Nwalkers, Nstep = 100, 1000
+Nwalkers, Nstep = 100, 500
 ifmr_x = np.array([0.5, 1, 1.5, 2, 2.5, 3, 4, 6, 8])
 
 ###########################################################################
@@ -22,8 +22,8 @@ def run_MCMC(DWDs):
     pos0 = np.array([
         np.random.beta(0.5, 0.5, Nwalkers), #P_weird
         np.random.normal(10.0, 1.0, Nwalkers)**2, #V_weird
-        np.random.uniform(0.01, 0.05, Nwalkers), #Teff_err
-        np.random.uniform(0.01, 0.05, Nwalkers), #logg_err
+        np.random.exponential(0.01, Nwalkers), #Teff_err
+        np.random.exponential(0.01, Nwalkers), #logg_err
     ] + [np.random.uniform(*x01, Nwalkers) for x01 in pairwise(Mf_ranges)]).T
     Ndim = pos0.shape[1]
 
