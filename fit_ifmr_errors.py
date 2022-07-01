@@ -36,7 +36,7 @@ def run_MCMC(DWDs):
     np.save("IFMR_MCMC_lnprob.npy", sampler.lnprobability)
 
 if __name__ == "__main__":
-    with open("DWDs_Teffs_loggs.dat", 'rb') as F:
+    with open("DWDs_Teffs_loggs.pkl", 'rb') as F:
         DWDs = pickle.load(F)
     DWDs = {name : Taylor_Expand_DWD(DWD) for name, DWD in DWDs.items() \
         if name in use_DWDs}
