@@ -1,4 +1,42 @@
 
+good_DWDs_220225 = {
+    "runA_WDJ0855-2637AB",
+    "runA_WDJ1015+0806AB",
+    "runA_WDJ1019+1217AB",
+    "runA_WDJ1124-1234AB",
+    "runA_WDJ1254-0218AB",
+    "runA_WDJ1336-1620AB",
+   #"runA_WDJ1346-4630AB", #?
+   #"runA_WDJ1445+2921AB", #?
+    "runA_WDJ1636+0927AB",
+    "runA_WDJ1856+2916AB",
+    "runA_WDJ1907+0136AB",
+   #"runA_WDJ1953-1019AB", #?
+    "runA_WDJ2131-3459AB",
+    "runA_WDJ2142+1329AB",
+   #"runA_WDJ2223+2201AB", #?
+    "runB_WDJ1313+2030AB",
+    "runB_WDJ1338+0439AB",
+    "runB_WDJ1339-5449AB",
+   #"runB_WDJ1535+2125AB", #?
+    "runB_WDJ1729+2916AB",
+   #"runB_WDJ1831-6608AB", #?
+    "runB_WDJ1859-5529AB",
+   #"runB_WDJ1904-1946AB", #?
+   #"runC_WDJ0007-1605AB",
+    "runC_WDJ0052+1353AB",
+   #"runC_WDJ0101-1629AB", #?
+   #"runC_WDJ0109-1042AB", #?
+    "runC_WDJ0120-1622AB",
+    "runC_WDJ0215+1821AB",
+    "runC_WDJ0410-1641AB",
+    "runC_WDJ0510+0438AB",
+    "runC_WDJ2058+1037AB",
+    "runC_WDJ2122+3005AB",
+    "runC_WDJ2139-1003AB",
+    "runC_WDJ2242+1250AB",
+}
+
 good_DWDs_220630 = {
     "runA_WDJ0855-2637AB",
     "runA_WDJ1015+0806AB", #!

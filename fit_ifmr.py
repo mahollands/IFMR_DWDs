@@ -7,50 +7,13 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 from scipy import stats
 import emcee
+from DWD_sets import good_DWDs_220225 as use_DWDs
 
 N_CPU = 10
 Nwalkers, Nstep, Nmarginal = 200, 500, 10_000
 ifmr_x = np.array([0, 8])
 ifmr_x = np.array([0, 2, 4, 8])
 ifmr_x = np.array([0, 1, 2, 3, 4, 6, 8])
-
-use_DWDs = {
-    "chain_runA_WDJ0855-2637AB.npy",
-    "chain_runA_WDJ1015+0806AB.npy",
-    "chain_runA_WDJ1019+1217AB.npy",
-    "chain_runA_WDJ1124-1234AB.npy",
-    "chain_runA_WDJ1254-0218AB.npy",
-    "chain_runA_WDJ1336-1620AB.npy",
-    #"chain_runA_WDJ1346-4630AB.npy", #?
-    #"chain_runA_WDJ1445+2921AB.npy", #?
-    "chain_runA_WDJ1636+0927AB.npy",
-    "chain_runA_WDJ1856+2916AB.npy",
-    "chain_runA_WDJ1907+0136AB.npy",
-    #"chain_runA_WDJ1953-1019AB.npy", #?
-    "chain_runA_WDJ2131-3459AB.npy",
-    "chain_runA_WDJ2142+1329AB.npy",
-    #"chain_runA_WDJ2223+2201AB.npy", #?
-    "chain_runB_WDJ1313+2030AB.npy",
-    "chain_runB_WDJ1338+0439AB.npy",
-    "chain_runB_WDJ1339-5449AB.npy",
-    #"chain_runB_WDJ1535+2125AB.npy", #?
-    "chain_runB_WDJ1729+2916AB.npy",
-    #"chain_runB_WDJ1831-6608AB.npy", #?
-    "chain_runB_WDJ1859-5529AB.npy",
-    #"chain_runB_WDJ1904-1946AB.npy", #?
-    #"chain_runC_WDJ0007-1605AB.npy",
-    "chain_runC_WDJ0052+1353AB.npy",
-    #"chain_runC_WDJ0101-1629AB.npy", #?
-    #"chain_runC_WDJ0109-1042AB.npy", #?
-    "chain_runC_WDJ0120-1622AB.npy",
-    "chain_runC_WDJ0215+1821AB.npy",
-    "chain_runC_WDJ0410-1641AB.npy",
-    "chain_runC_WDJ0510+0438AB.npy",
-    "chain_runC_WDJ2058+1037AB.npy",
-    "chain_runC_WDJ2122+3005AB.npy",
-    "chain_runC_WDJ2139-1003AB.npy",
-    "chain_runC_WDJ2242+1250AB.npy",
-}
 
 with open("DWDs.dat", 'rb') as F:
     DWDs = pickle.load(F)
