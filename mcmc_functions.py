@@ -62,6 +62,7 @@ def loglike_Mi12_outliers(Mi1, Mi2, vec, cov, IFMR, P_weird, V_weird, separate=F
         return logL_coeval, logL_weird
     else:
         return np.logaddexp(logL_coeval, logL_weird)
+        
 
 @numba.vectorize
 def logprior_Mi12(Mi1, Mi2):
@@ -111,7 +112,10 @@ def loglike_DWD(params, DWD, IFMR, IFMR_i, outliers=False):
     ok = (Mf12 > IFMR.y.min()) & (Mf12 < IFMR.y.max()) #reject samples outside of IFMR
     ok = np.all(ok, axis=1)
     Mf12 = Mf12[ok,:]
-    Mi1, Mi2 = IFMR_i(Mf12.T)
+    Mi12 = IFMR_i(Mf12)
+    ok = (Mi12 > 0.6) & (Mi12 < 8.0) #MSLT table limits
+    ok = np.all(ok, axis=1)
+    (Mi1, Mi2), Mf12 = Mi12[ok,:].T, Mf12[ok,:]
     jac1, jac2 = grad_IFMR_i(Mf12, IFMR).T
 
     #importance sampling
