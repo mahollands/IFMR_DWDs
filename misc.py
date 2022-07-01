@@ -12,22 +12,17 @@ def Taylor_Expand_WD(T0, g0, dT=10, dg=0.001, thickness='thick'):
     """
     Pre-compute Taylor-Expansions for Masses and ages
     """
-    M0 = M_from_Teff_logg(T0, g0, thickness)
-    M_p_dT = M_from_Teff_logg(T0+dT, g0, thickness)
-    M_m_dT = M_from_Teff_logg(T0-dT, g0, thickness)
-    M_p_dg = M_from_Teff_logg(T0, g0+dg, thickness)
-    M_m_dg = M_from_Teff_logg(T0, g0-dg, thickness)
+    T_vals = np.array([T0, T0+dT, T0-dT, T0, T0])
+    g_vals = np.array([g0, g0, g0, g0+dg, g0-dg])
 
+    M_vals = M_from_Teff_logg(T_vals, g_vals, thickness)
+    M0, M_p_dT , M_m_dT , M_p_dg , M_m_dg = M_vals
     dM_dT = (M_p_dT - M_m_dT)/(2*dT)
     dM_dg = (M_p_dg - M_m_dg)/(2*dg)
     Taylor_M = M0, dM_dT, dM_dg
 
-    tau0 = tau_from_Teff_logg(T0, g0, thickness)
-    tau_p_dT = tau_from_Teff_logg(T0+dT, g0, thickness)
-    tau_m_dT = tau_from_Teff_logg(T0-dT, g0, thickness)
-    tau_p_dg = tau_from_Teff_logg(T0, g0+dg, thickness)
-    tau_m_dg = tau_from_Teff_logg(T0, g0-dg, thickness)
-
+    tau_vals = tau_from_Teff_logg(T_vals, g_vals, thickness)
+    tau0, tau_p_dT, tau_m_dT, tau_p_dg, tau_m_dg = tau_vals
     dtau_dT = (tau_p_dT - tau_m_dT)/(2*dT)
     dtau_dg = (tau_p_dg - tau_m_dg)/(2*dg)
     Taylor_tau = tau0, dtau_dT, dtau_dg
