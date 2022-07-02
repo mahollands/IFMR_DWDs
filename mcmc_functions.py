@@ -19,18 +19,6 @@ def MSLT(Mi):
     """
     return 10**log_tau_fun(Mi)
 
-def get_Mf12_dtau(DWD, Teff_err, logg_err):
-    """
-    Add systematic uncertainties to Teff and logg covariance matrix, then get
-    M1f, M2f and dtau vector and covariance matrix via linear transform.
-    """
-    Tg_vec, Tg_cov, vec, Jac = DWD
-    T10, T20, g10, g20 = Tg_vec
-    err_syst = np.array([Teff_err*T10, Teff_err*T20, logg_err, logg_err])
-    Tg_cov_ = Tg_cov + np.diag(err_syst**2)
-    cov = Jac @ Tg_cov_ @ Jac.T
-    return vec, cov
-
 def loglike_Mi12(Mi1, Mi2, vec, cov, IFMR, outliers=False, V_weird=None):
     """
     params are the MS star masses and the y values of the IFMR at values. DWD
@@ -104,8 +92,8 @@ def loglike_DWD(params, DWD, IFMR, IFMR_i, outliers=False):
         P_weird, V_weird, Teff_err, logg_err = params
     else:
         Teff_err, logg_err = params
-    vecMtau, covMtau = get_Mf12_dtau(DWD, Teff_err, logg_err)
-    vecM, covM = vecMtau[:2], covMtau[:2,:2]
+    covMdtau = DWD.covMdtau_systematics(Teff_err, logg_err)
+    vecM, covM = DWD.vecMtau[:2], covMdtau[:2,:2]
 
     #draw samples of Mf12, and calc Mi12, and jacobians
     Mf12 = np.random.multivariate_normal(vecM, covM, N_MARGINALISE)
@@ -120,10 +108,10 @@ def loglike_DWD(params, DWD, IFMR, IFMR_i, outliers=False):
 
     #importance sampling
     if outliers:
-        log_probs = logpost_Mi12_outliers(Mi1, Mi2, vecMtau, covMtau, IFMR, \
-            P_weird, V_weird)
+        log_probs = logpost_Mi12_outliers(Mi1, Mi2, DWD.vecMdtau, covMdtau, \
+            IFMR, P_weird, V_weird)
     else:
-        log_probs = logpost_Mi12(Mi1, Mi2, vecMtau, covMtau, IFMR)
+        log_probs = logpost_Mi12(Mi1, Mi2, DWD.vecMdtau, covMdtau, IFMR)
     log_weights = -stats.multivariate_normal.logpdf(Mf12, mean=vecM, cov=covM)
     integrand = np.exp(log_probs + log_weights) * jac1 * jac2
     I = np.mean(integrand)
@@ -142,7 +130,7 @@ def loglike_DWDs(theta, DWDs, ifmr_x, outliers=False):
         params = Teff_err, logg_err
     IFMR, IFMR_i = interp1d(ifmr_x, ifmr_y), interp1d(ifmr_y, ifmr_x)
     return sum(loglike_DWD(params, DWD, IFMR, IFMR_i, outliers=outliers) \
-            for DWD in DWDs.values())
+            for DWD in DWDs)
 
 def logprior(params, ifmr_x, outliers=False):
     """

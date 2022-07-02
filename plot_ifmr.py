@@ -1,11 +1,9 @@
 import numpy as np
-import pickle
 import corner
 import matplotlib.pyplot as plt
-from fit_ifmr_errors import ifmr_x
-from mcmc_functions import MSLT, get_Mf12_dtau, loglike_Mi12_outliers
+from mcmc_functions import MSLT, loglike_Mi12_outliers
 from scipy.interpolate import interp1d
-from misc import Taylor_Expand_DWD
+from DWD_class import load_DWDs
 
 BURN = -50
 PLOT_CHAINS=True
@@ -14,11 +12,12 @@ PLOT_IFMR=True
 outliers=True
 
 if outliers:
-    chain = np.load("IFMR_MCMC_outliers.npy")
-    lnp = np.load("IFMR_MCMC_outliers_lnprob.npy")
+    from fit_ifmr_outliers_errors import ifmr_x, f_MCMC_out
 else:
-    chain = np.load("IFMR_MCMC.npy")
-    lnp = np.load("IFMR_MCMC_lnprob.npy")
+    from fit_ifmr_errors import ifmr_x, f_MCMC_out
+
+chain = np.load(f"MCMC_output/{f_MCMC_out}_chain.npy")
+lnp = np.load(f"MCMC_output/{f_MCMC_out}_lnprob.npy")
 final = chain[:,-1,:]
 
 Nwalkers, Nstep, Ndim = chain.shape
@@ -91,16 +90,12 @@ if PLOT_IFMR:
     plt.show()
 
 
-with open("DWDs_Teffs_loggs.dat", 'rb') as F:
-    DWDs = pickle.load(F)
-
-DWDs1 = {name : Taylor_Expand_DWD(DWD) for name, DWD in DWDs.items()}
-DWDs2 = {name : Taylor_Expand_DWD(DWD, separate_tau=True) for name, DWD in DWDs.items()}
+DWDs = load_DWDs()
 
 print("Making plot")
 
-for (name, DWD1), DWD2 in zip(DWDs1.items(), DWDs2.values()):
-    plt.figure(name)
+for DWD in DWDs:
+    plt.figure(DWD.name)
     plt.plot([0,15], [0,15], 'k:')
     P_coeval = []
     for params in final:
@@ -109,17 +104,17 @@ for (name, DWD1), DWD2 in zip(DWDs1.items(), DWDs2.values()):
         else:
             Teff_err, logg_err, *ifmr_y = params
         IFMR, IFMR_i = interp1d(ifmr_x, ifmr_y), interp1d(ifmr_y, ifmr_x)
-        vecMtau, covMtau = get_Mf12_dtau(DWD2, Teff_err, logg_err)
+        covMtau = DWD.covMtau_systematics(Teff_err, logg_err)
 
-        Mf1, Mf2, tau1, tau2 = np.random.multivariate_normal(vecMtau, covMtau)
+        Mf1, Mf2, tau1, tau2 = np.random.multivariate_normal(DWD.vecMtau, covMtau)
         if not all(ifmr_y[0] < Mf < ifmr_y[-1] for Mf in (Mf1, Mf2)):
             continue
         Mi1, Mi2 = IFMR_i(Mf1), IFMR_i(Mf2)
 
         if outliers:
-            vecMtau, covMtau = get_Mf12_dtau(DWD1, Teff_err, logg_err)
-            logL_coeval, logL_weird = loglike_Mi12_outliers(Mi1, Mi2, vecMtau, \
-                covMtau, IFMR, P_weird, V_weird, separate=True)
+            covMdtau = DWD.covMdtau_systematics(Teff_err, logg_err)
+            logL_coeval, logL_weird = loglike_Mi12_outliers(Mi1, Mi2, \
+                DWD.vecMdtau, covMdtau, IFMR, P_weird, V_weird, separate=True)
             logL_tot = np.logaddexp(logL_coeval, logL_weird)
             P_coeval.append(np.exp(logL_coeval-logL_tot))
 
@@ -127,9 +122,8 @@ for (name, DWD1), DWD2 in zip(DWDs1.items(), DWDs2.values()):
         dt = t1-t2
         plt.plot(t1+tau1, t2+tau2, 'C0.', ms=1)
 
-        vecMtau, covMtau = get_Mf12_dtau(DWD2, 0, 0)
-
-        Mf1, Mf2, tau1, tau2 = np.random.multivariate_normal(vecMtau, covMtau)
+        covMtau = DWD.covMtau_systematics(0, 0)
+        Mf1, Mf2, tau1, tau2 = np.random.multivariate_normal(DWD.vecMtau, covMtau)
         if not all(ifmr_y[0] < Mf < ifmr_y[-1] for Mf in (Mf1, Mf2)):
             continue
         Mi1, Mi2 = IFMR_i(Mf1), IFMR_i(Mf2)
@@ -148,6 +142,6 @@ for (name, DWD1), DWD2 in zip(DWDs1.items(), DWDs2.values()):
     if outliers:
         plt.title("$P_\mathrm{{coeval}}$ = {:.3f}".format(np.mean(P_coeval)))
     plt.tight_layout()
-    plt.savefig(f"age_plots/{name}.png", dpi=200)
+    plt.savefig(f"age_plots/{DWD.name}.png", dpi=200)
     plt.close()
-    print(name)
+    print(DWD.name)

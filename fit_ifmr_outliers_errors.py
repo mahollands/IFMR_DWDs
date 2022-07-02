@@ -1,15 +1,16 @@
 import os
 os.environ["OMP_NUM_THREADS"] = "1"
-import pickle
 from multiprocessing import Pool
 import numpy as np
 import emcee
-from misc import Taylor_Expand_DWD, pairwise
+from misc import pairwise
 from mcmc_functions import logpost_DWDs
 from DWD_sets import bad_DWDs_220701 as dont_use_DWDs
+from DWD_class import load_DWDs
 
 N_CPU = 10
-Nwalkers, Nstep = 100, 500
+Nwalkers, Nstep = 100, 1000
+f_MCMC_out = "IFMR_MCMC_outliers"
 ifmr_x = np.array([0.5, 1, 1.5, 2, 2.5, 3, 4, 6, 8])
 
 ###########################################################################
@@ -24,7 +25,8 @@ def run_MCMC(DWDs):
         np.random.normal(10.0, 1.0, Nwalkers)**2, #V_weird
         np.random.exponential(0.01, Nwalkers), #Teff_err
         np.random.exponential(0.01, Nwalkers), #logg_err
-    ] + [np.random.uniform(*x01, Nwalkers) for x01 in pairwise(Mf_ranges)]).T
+    #] + [np.random.uniform(*x01, Nwalkers) for x01 in pairwise(Mf_ranges)]).T
+    ] + [np.random.uniform(0, Mi, Nwalkers) for Mi in ifmr_x]).T
     Ndim = pos0.shape[1]
 
     #Run MCMC
@@ -33,13 +35,9 @@ def run_MCMC(DWDs):
             args=(DWDs, ifmr_x, True), pool=pool)
         sampler.run_mcmc(pos0, Nstep, progress=True)
 
-    np.save("IFMR_MCMC_outliers.npy", sampler.chain)
-    np.save("IFMR_MCMC_outliers_lnprob.npy", sampler.lnprobability)
+    np.save(f"MCMC_output/{f_MCMC_out}_chain.npy", sampler.chain)
+    np.save(f"MCMC_output/{f_MCMC_out}_lnprob.npy", sampler.lnprobability)
 
 if __name__ == "__main__":
-    with open("DWDs_Teffs_loggs.pkl", 'rb') as F:
-        DWDs = pickle.load(F)
-    DWDs = {name : Taylor_Expand_DWD(DWD) for name, DWD in DWDs.items() \
-        #if name not in use_DWDs}
-        if name not in dont_use_DWDs}
+    DWDs = load_DWDs(exclude_set=dont_use_DWDs)
     run_MCMC(DWDs)

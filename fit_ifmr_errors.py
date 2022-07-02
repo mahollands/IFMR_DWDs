@@ -4,12 +4,14 @@ import pickle
 from multiprocessing import Pool
 import numpy as np
 import emcee
-from misc import Taylor_Expand_DWD, pairwise
+from misc import pairwise
 from mcmc_functions import logpost_DWDs
 from DWD_sets import good_DWDs_220630 as use_DWDs
+from DWD_class import load_DWDs
 
 N_CPU = 10
 Nwalkers, Nstep = 500, 100
+f_MCMC_out = "IFMR_MCMC_outliers"
 ifmr_x = np.array([0.5, 1, 1.5, 2, 2.5, 3, 4, 6, 8])
 #ifmr_x = np.array([0, 2, 4, 8])
 
@@ -32,12 +34,10 @@ def run_MCMC(DWDs):
             args=(DWDs, ifmr_x), pool=pool)
         sampler.run_mcmc(pos0, Nstep, progress=True)
 
-    np.save("IFMR_MCMC.npy", sampler.chain)
-    np.save("IFMR_MCMC_lnprob.npy", sampler.lnprobability)
+    np.save(f"MCMC_output/{f_MCMC_out}_chain.npy", sampler.chain)
+    np.save(f"MCMC_output/{f_MCMC_out}_lnprob.npy", sampler.lnprobability)
+
 
 if __name__ == "__main__":
-    with open("DWDs_Teffs_loggs.pkl", 'rb') as F:
-        DWDs = pickle.load(F)
-    DWDs = {name : Taylor_Expand_DWD(DWD) for name, DWD in DWDs.items() \
-        if name in use_DWDs}
+    DWDs = load_DWDs(use_set=use_DWDs)
     run_MCMC(DWDs)
