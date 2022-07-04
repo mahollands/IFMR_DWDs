@@ -6,12 +6,13 @@ from scipy.interpolate import interp1d
 from DWD_class import load_DWDs
 
 BURN = -50
-PLOT_CHAINS=True
-PLOT_CORNER=True
-PLOT_IFMR=True
-outliers=True
+PLOT_CHAINS = True
+PLOT_CORNER = True
+PLOT_IFMR = True
+PLOT_TOTAL_AGES = True
+OUTLIERS = True
 
-if outliers:
+if OUTLIERS:
     from fit_ifmr_outliers_errors import ifmr_x, f_MCMC_out
 else:
     from fit_ifmr_errors import ifmr_x, f_MCMC_out
@@ -22,15 +23,16 @@ final = chain[:,-1,:]
 
 Nwalkers, Nstep, Ndim = chain.shape
 labels = ["Teff_err", "logg_err"] + [f"y{x}" for x in range(1, len(ifmr_x)+1)]
-if outliers:
-    labels = ["P_weird", "V_weird"] + labels
+if OUTLIERS:
+    labels = ["P_weird", "scale_weird"] + labels
 
 ########################################
 # Make figures of chains and corner plot
 
-def chain_figure(chain, Ndim, Nwalkers):
+def chain_figure(chain, final, Ndim, Nwalkers):
     plt.figure("chains", figsize=(12, 8))
     for idim, label in enumerate(labels):
+        print(label, np.median(final[:,idim]), np.std(final[:,idim]))
         plt.subplot(5, 3, idim+1)
         for iwalker in range(min(Nwalkers, 1000)):
             plt.plot(chain[iwalker,:,idim], 'k-', alpha=0.05)
@@ -50,19 +52,12 @@ def lnprob_figure(lnp, Nwalkers):
     plt.tight_layout()
     plt.show()
 
-if PLOT_CHAINS:
-    chain_figure(chain, Ndim, Nwalkers)
-    #lnprob_figure(lnp, Nwalkers)
+def IFMR_figure(final):
 
-if PLOT_CORNER:
-    data = chain[:,BURN::5,:]
-    data = data.reshape((data.shape[0]*data.shape[1], data.shape[2]))
-    corner.corner(data, smooth1d=True, labels=labels, quantiles=[0.16, 0.50, 0.84])
-    plt.savefig("IFMR_corner.png", dpi=200)
-    plt.show()
-
-if PLOT_IFMR:
     final_ = final[:,-len(ifmr_x):]
+    
+    plt.figure(figsize=(8, 8))
+    plt.subplot(2, 1, 1)
     for ifmr_y in final_:
         plt.plot(ifmr_x, ifmr_y, 'k-', alpha=0.05)
     plt.plot(ifmr_x, np.percentile(final_, 16, axis=0), 'C1-')
@@ -74,9 +69,8 @@ if PLOT_IFMR:
     plt.ylim(0, 2.0)
     plt.xlabel("Mi [Msun]")
     plt.ylabel("Mf [Msun]")
-    plt.savefig("IFMR.png", dpi=200)
-    plt.show()
 
+    plt.subplot(2, 1, 2)
     for ifmr_y in final_:
         plt.plot(ifmr_x, ifmr_y/ifmr_x, 'k-', alpha=0.05)
     plt.plot(ifmr_x, np.percentile(final_, 16, axis=0)/ifmr_x, 'C1-')
@@ -86,21 +80,18 @@ if PLOT_IFMR:
     plt.ylim(0, 1.0)
     plt.xlabel("Mi [Msun]")
     plt.ylabel("Mf/Mi")
-    plt.savefig("IFMR_mass_loss.png", dpi=200)
+
+    plt.tight_layout()
+    plt.savefig("IFMR.png", dpi=200)
     plt.show()
 
-
-DWDs = load_DWDs()
-
-print("Making plot")
-
-for DWD in DWDs:
+def total_ages_figure(final, DWD):
     plt.figure(DWD.name)
     plt.plot([0,15], [0,15], 'k:')
     P_coeval = []
     for params in final:
-        if outliers:
-            P_weird, V_weird, Teff_err, logg_err, *ifmr_y = params
+        if OUTLIERS:
+            P_weird, scale_weird, Teff_err, logg_err, *ifmr_y = params
         else:
             Teff_err, logg_err, *ifmr_y = params
         IFMR, IFMR_i = interp1d(ifmr_x, ifmr_y), interp1d(ifmr_y, ifmr_x)
@@ -108,13 +99,13 @@ for DWD in DWDs:
 
         Mf1, Mf2, tau1, tau2 = np.random.multivariate_normal(DWD.vecMtau, covMtau)
         if not all(ifmr_y[0] < Mf < ifmr_y[-1] for Mf in (Mf1, Mf2)):
-            continue
+            return
         Mi1, Mi2 = IFMR_i(Mf1), IFMR_i(Mf2)
 
-        if outliers:
+        if OUTLIERS:
             covMdtau = DWD.covMdtau_systematics(Teff_err, logg_err)
             logL_coeval, logL_weird = loglike_Mi12_outliers(Mi1, Mi2, \
-                DWD.vecMdtau, covMdtau, IFMR, P_weird, V_weird, separate=True)
+                DWD.vecMdtau, covMdtau, IFMR, P_weird, scale_weird, separate=True)
             logL_tot = np.logaddexp(logL_coeval, logL_weird)
             P_coeval.append(np.exp(logL_coeval-logL_tot))
 
@@ -125,7 +116,8 @@ for DWD in DWDs:
         covMtau = DWD.covMtau_systematics(0, 0)
         Mf1, Mf2, tau1, tau2 = np.random.multivariate_normal(DWD.vecMtau, covMtau)
         if not all(ifmr_y[0] < Mf < ifmr_y[-1] for Mf in (Mf1, Mf2)):
-            continue
+            plt.close()
+            return
         Mi1, Mi2 = IFMR_i(Mf1), IFMR_i(Mf2)
 
         t1, t2 = MSLT(Mi1), MSLT(Mi2)
@@ -139,9 +131,29 @@ for DWD in DWDs:
     plt.yticks(tick_labels, tick_labels)
     plt.xlabel("t_tot1 [Gyr]")
     plt.ylabel("t_tot2 [Gyr]")
-    if outliers:
-        plt.title("$P_\mathrm{{coeval}}$ = {:.3f}".format(np.mean(P_coeval)))
+    if OUTLIERS:
+        plt.title("$P_\mathrm{{coeval}}$ = {:.3f}".format(np.median(P_coeval)))
     plt.tight_layout()
     plt.savefig(f"age_plots/{DWD.name}.png", dpi=200)
     plt.close()
-    print(DWD.name)
+    print(DWD.name, np.mean(P_coeval), np.median(P_coeval))
+
+if __name__ == "__main__":
+    if PLOT_CHAINS:
+        chain_figure(chain, final, Ndim, Nwalkers)
+        #lnprob_figure(lnp, Nwalkers)
+
+    if PLOT_CORNER:
+        data = chain[:,BURN::5,:]
+        data = data.reshape((data.shape[0]*data.shape[1], data.shape[2]))
+        corner.corner(data, smooth1d=True, labels=labels, quantiles=[0.16, 0.50, 0.84])
+        plt.savefig("IFMR_corner.png", dpi=200)
+        plt.show()
+
+    if PLOT_IFMR:
+        IFMR_figure(final)
+
+    if PLOT_TOTAL_AGES:
+        DWDs = load_DWDs()
+        for DWD in DWDs:
+            total_ages_figure(final, DWD)
