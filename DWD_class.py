@@ -16,6 +16,9 @@ class DWDcontainer:
         self.JacMdtau = JacMdtau
         self.JacMtau = JacMtau
 
+    def __repr__(self):
+        return f"DWD(name='{self.name}', ...)"
+
     def get_Tg_cov_systematics(self, Teff_err, logg_err):
         """
         Add systematic uncertainties to Teff-logg covariance matrix
