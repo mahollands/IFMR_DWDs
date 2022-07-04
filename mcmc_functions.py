@@ -6,12 +6,48 @@ from math import log
 from misc import pairwise
 
 MONOTONIC_IFMR = False
-N_MARGINALISE = 400
+N_MARGINALISE = 1600
+OUTLIER_DTAU_DIST = "normal" #one of ['normal', 'logit normal', 'uniform', 'beta']
 
 #MS lifetime from MESA data
 M_init, t_pre = np.loadtxt("MESA_lifetime.dat", unpack=True, skiprows=1)
 t_pre /= 1e9 #to Gyr
 log_tau_fun = interp1d(M_init, np.log10(t_pre), kind='cubic', bounds_error=False)
+
+def get_outlier_dtau_distribution(dist_name):
+    """
+    Choice of distributions for dtau when considering outliers. Valid choices
+    are:
+        - "normal"
+        - "logit-normal"
+        - "uniform"
+        - "beta"
+    In all cases, arguments are the dtau array, and the distibution scale (this
+    has no effect for the uniform distribution.
+    """
+    def outlier_norm(dtau, scale):
+        return stats.norm.logpdf(dtau, loc=0, scale=scale)
+
+    def outlier_logit_norm(dtau, scale):
+        z = 0.5*(dtau/13.8+1)
+        logit_z = np.log(z/(1-z))
+        return stats.norm.logpdf(logit_z, loc=0, scale=scale) - np.log(2*13.8*(z*(1-z)))
+
+    def outlier_uniform(dtau, scale):
+        return stats.uniform.logpdf(dtau, -13.8, 13.8)
+
+    def outlier_beta(dtau, scale):
+        return stats.beta.logpdf(dtau, scale_weird, scale, loc=-13.8, scale=2*13.8)
+
+    outlier_dist_options = {
+        'normal' : outlier_norm,
+        'logit normal' : outlier_logit_norm,
+        'uniform' : outlier_uniform,
+        'beta' : outlier_beta,
+    }
+    return outlier_dist_options[dist_name]
+
+outlier_dtau_dist = get_outlier_dtau_distribution(OUTLIER_DTAU_DIST)
 
 def MSLT(Mi):
     """
@@ -19,32 +55,32 @@ def MSLT(Mi):
     """
     return 10**log_tau_fun(Mi)
 
-def loglike_Mi12(Mi1, Mi2, vec, cov, IFMR, outliers=False, V_weird=None):
+def loglike_Mi12(Mi1, Mi2, vec, cov, IFMR, outliers=False, scale_weird=None):
     """
     params are the MS star masses and the y values of the IFMR at values. DWD
     contains a vector of Mf1, Mf2, dtau_cool and the corresponding covariance
     matrix.
     """
-    if outliers:
-        cov_ = np.zeros((3, 3))
-        cov_[:2, :2] = cov[:2, :2]
-        cov_[2, 2] = V_weird
-    else:
-        cov_ = cov
-    Mf1, Mf2 = IFMR([Mi1, Mi2])
     tau1, tau2 = MSLT([Mi1, Mi2])
-    X = np.array([Mf1, Mf2, tau2-tau1])
-    return stats.multivariate_normal.logpdf(X.T, mean=vec, cov=cov_)
+    dtau = tau2-tau1
+    Mf1, Mf2 = IFMR([Mi1, Mi2])
+    X = np.array([Mf1, Mf2, dtau])
+    if outliers:
+        ll1 =  stats.multivariate_normal.logpdf(X[:2].T, mean=vec[:2], cov=cov[:2,:2])
+        ll2 = outlier_dtau_dist(dtau, scale_weird)
+        return ll1 + ll2
+    else:
+        return stats.multivariate_normal.logpdf(X.T, mean=vec, cov=cov)
 
-def loglike_Mi12_outliers(Mi1, Mi2, vec, cov, IFMR, P_weird, V_weird, separate=False):
+def loglike_Mi12_outliers(Mi1, Mi2, vec, cov, IFMR, P_weird, scale_weird, separate=False):
     """
-    P_weird is the probability that any DWD is weird, V_weird is the
+    P_weird is the probability that any DWD is weird, scale_weird is the
     variance of cooling age differences for weird DWDs. The likelihood
     is a mixture model of the coeval and non-coeval likelihoods.
     """
     args = Mi1, Mi2, vec, cov, IFMR
     logL_coeval  = loglike_Mi12(*args, outliers=False) + log(1-P_weird)
-    logL_weird = loglike_Mi12(*args, outliers=True, V_weird=V_weird) + log(P_weird)
+    logL_weird = loglike_Mi12(*args, outliers=True, scale_weird=scale_weird) + log(P_weird)
 
     if separate:
         return logL_coeval, logL_weird
@@ -66,9 +102,9 @@ def logpost_Mi12(Mi1, Mi2, vec, cov, IFMR):
     ll = loglike_Mi12(Mi1, Mi2, vec, cov, IFMR)
     return lp + ll
 
-def logpost_Mi12_outliers(Mi1, Mi2, vec, cov, IFMR, P_weird=None, V_weird=None):
+def logpost_Mi12_outliers(Mi1, Mi2, vec, cov, IFMR, P_weird=None, scale_weird=None):
     lp = logprior_Mi12(Mi1, Mi2)
-    ll = loglike_Mi12_outliers(Mi1, Mi2, vec, cov, IFMR, P_weird, V_weird)
+    ll = loglike_Mi12_outliers(Mi1, Mi2, vec, cov, IFMR, P_weird, scale_weird)
     return lp + ll
 
 def grad_IFMR_i(Mf, IFMR):
@@ -89,7 +125,7 @@ def loglike_DWD(params, DWD, IFMR, IFMR_i, outliers=False):
     P(theta, DWD) = \iint P(Mi1, Mi2, theta | DWD) dMi1 dMi2
     """
     if outliers:
-        P_weird, V_weird, Teff_err, logg_err = params
+        P_weird, scale_weird, Teff_err, logg_err = params
     else:
         Teff_err, logg_err = params
     covMdtau = DWD.covMdtau_systematics(Teff_err, logg_err)
@@ -109,7 +145,7 @@ def loglike_DWD(params, DWD, IFMR, IFMR_i, outliers=False):
     #importance sampling
     if outliers:
         log_probs = logpost_Mi12_outliers(Mi1, Mi2, DWD.vecMdtau, covMdtau, \
-            IFMR, P_weird, V_weird)
+            IFMR, P_weird, scale_weird)
     else:
         log_probs = logpost_Mi12(Mi1, Mi2, DWD.vecMdtau, covMdtau, IFMR)
     log_weights = -stats.multivariate_normal.logpdf(Mf12, mean=vecM, cov=covM)
@@ -123,8 +159,8 @@ def loglike_DWDs(theta, DWDs, ifmr_x, outliers=False):
     log likelihood for ifmr_y for all DWDs
     """
     if outliers:
-        P_weird, V_weird, Teff_err, logg_err, *ifmr_y = theta
-        params = P_weird, V_weird, Teff_err, logg_err
+        P_weird, scale_weird, Teff_err, logg_err, *ifmr_y = theta
+        params = P_weird, scale_weird, Teff_err, logg_err
     else:
         Teff_err, logg_err, *ifmr_y = theta
         params = Teff_err, logg_err
@@ -137,10 +173,10 @@ def logprior(params, ifmr_x, outliers=False):
     priors on IFMR all ifmr parameters
     """
     if outliers:
-        P_weird, V_weird, Teff_err, logg_err, *ifmr_y = params
+        P_weird, scale_weird, Teff_err, logg_err, *ifmr_y = params
         if not (0 < P_weird < 1):
             return -np.inf
-        if V_weird < 0:
+        if scale_weird < 0:
             return -np.inf
     else:
         Teff_err, logg_err, *ifmr_y = params
@@ -161,10 +197,11 @@ def logprior(params, ifmr_x, outliers=False):
 
     log_priors = [
         stats.arcsine.logpdf(mf_mi).sum(),
-        - log(Teff_err),
-        - log(logg_err),
+        -log(Teff_err),
+        -log(logg_err),
         stats.arcsine.logpdf(P_weird) if outliers else 0,
-        - log(V_weird) if outliers else 0,
+        #stats.rayleigh.logpdf(scale_weird, scale=1) if outliers else 0,
+        -log(scale_weird),
     ]
 
     return sum(log_priors)
