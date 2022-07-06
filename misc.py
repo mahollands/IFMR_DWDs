@@ -47,5 +47,5 @@ def draw_Mi_samples(vecM, covM, IFMR, N_MARGINALISE):
     ok = np.all(ok, axis=1)
     Mf12 = Mf12[ok,:]
     Mi12 = IFMR.inv(Mf12)
-    return Mi12[ok,:].T, Mf12[ok,:]
+    return Mi12.T, Mf12
 
