@@ -2,7 +2,6 @@ import numpy as np
 import corner
 import matplotlib.pyplot as plt
 from mcmc_functions import MSLT, loglike_Mi12_outliers
-from scipy.interpolate import interp1d
 from DWD_class import load_DWDs
 from misc import create_IFMR
 
