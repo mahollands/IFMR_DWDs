@@ -13,10 +13,9 @@ def MSLT(Mi):
     """
     return 10**log_tau_fun(Mi)
 
-def pairwise(collection):
+def pairwise(iterable):
     """
-    Roughly recreates the python 3.10 itertools.pairwise. Will only work for
-    collections, not iterators.
+    Roughly recreates the python 3.10 itertools.pairwise.
     """
     a, b = tee(iterable)
     next(b, None)
