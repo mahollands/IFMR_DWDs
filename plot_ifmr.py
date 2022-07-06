@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from mcmc_functions import MSLT, loglike_Mi12_outliers
 from scipy.interpolate import interp1d
 from DWD_class import load_DWDs
-from misc import generate_IFMR
+from misc import create_IFMR
 
 BURN = -50
 PLOT_CHAINS = True
@@ -95,7 +95,7 @@ def total_ages_figure(final, DWD):
             P_weird, scale_weird, Teff_err, logg_err, *ifmr_y = params
         else:
             Teff_err, logg_err, *ifmr_y = params
-        IFMR = generate_IFMR(ifmr_x, ifmr_y)
+        IFMR = create_IFMR(ifmr_x, ifmr_y)
         covMtau = DWD.covMtau_systematics(Teff_err, logg_err)
 
         Mf1, Mf2, tau1, tau2 = np.random.multivariate_normal(DWD.vecMtau, covMtau)

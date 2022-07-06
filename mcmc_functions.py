@@ -6,16 +6,11 @@ import numba
 from scipy.interpolate import interp1d
 from scipy import stats
 from math import log
-from misc import generate_IFMR, draw_mass_samples, grad_IFMR_i
+from misc import create_IFMR, draw_mass_samples, MSLT
 
 MONOTONIC_IFMR = True
 N_MARGINALISE = 1600
-OUTLIER_DTAU_DIST = "uniform" #one of ['normal', 'logit normal', 'uniform', 'beta']
-
-#MS lifetime from MESA data
-M_init, t_pre = np.loadtxt("MESA_lifetime.dat", unpack=True, skiprows=1)
-t_pre /= 1e9 #to Gyr
-log_tau_fun = interp1d(M_init, np.log10(t_pre), kind='cubic', bounds_error=False)
+OUTLIER_DTAU_DIST = "normal" #one of ['normal', 'logit normal', 'uniform', 'beta']
 
 def get_outlier_dtau_distribution(dist_name):
     """
@@ -51,12 +46,6 @@ def get_outlier_dtau_distribution(dist_name):
     return outlier_dist_options[dist_name]
 
 outlier_dtau_dist = get_outlier_dtau_distribution(OUTLIER_DTAU_DIST)
-
-def MSLT(Mi):
-    """
-    Main sequence lifetime
-    """
-    return 10**log_tau_fun(Mi)
 
 def loglike_Mi12(Mi12, vec, cov, IFMR, outliers=False, scale_weird=None):
     """
@@ -126,7 +115,7 @@ def loglike_DWD(params, DWD, IFMR, outliers=False):
     Mi12, Mf12 = draw_mass_samples(vecM, covM, IFMR, N_MARGINALISE)
     if len(Mf12) == 0:
         return -np.inf
-    jac1, jac2 = grad_IFMR_i(Mf12, IFMR).T
+    jac1, jac2 = IFMR.inv_grad(Mf12).T
 
     #importance sampling
     if outliers:
@@ -140,21 +129,13 @@ def loglike_DWD(params, DWD, IFMR, outliers=False):
 
     return log(I) if I > 0 and np.isfinite(I) else -np.inf
 
-def loglike_DWDs(theta, DWDs, ifmr_x, outliers=False):
+def loglike_DWDs(params, DWDs, IFMR, outliers=False):
     """
     log likelihood for ifmr_y for all DWDs
     """
-    if outliers:
-        P_weird, scale_weird, Teff_err, logg_err, *ifmr_y = theta
-        params = P_weird, scale_weird, Teff_err, logg_err
-    else:
-        Teff_err, logg_err, *ifmr_y = theta
-        params = Teff_err, logg_err
-    IFMR = generate_IFMR(ifmr_x, ifmr_y)
-    return sum(loglike_DWD(params, DWD, IFMR, outliers=outliers) \
-        for DWD in DWDs)
+    return sum(loglike_DWD(params, DWD, IFMR, outliers=outliers) for DWD in DWDs)
 
-def logprior(params, ifmr_x, outliers=False):
+def logprior(params, IFMR, outliers=False):
     """
     priors on IFMR all ifmr parameters
     """
@@ -173,16 +154,15 @@ def logprior(params, ifmr_x, outliers=False):
         return -np.inf
 
     #Mass loss, q must be 0 < q < 1
-    mf_mi = [y/x for x, y in zip(ifmr_x, ifmr_y)]
-    if not all(0 < q < 1 for q in mf_mi):
+    if not all(0 < q < 1 for q in IFMR.mf_mi):
         return -np.inf
 
     #piecewise points in IFMR must be increasing
-    if MONOTONIC_IFMR and list(ifmr_y) != sorted(ifmr_y):
+    if MONOTONIC_IFMR and not np.allclose(IFMR.y, np.sort(IFMR.y)):
         return -np.inf
 
     log_priors = [
-        stats.arcsine.logpdf(mf_mi).sum(),
+        stats.arcsine.logpdf(IFMR.mf_mi).sum(),
         -log(Teff_err),
         -log(logg_err),
     ]
@@ -196,16 +176,27 @@ def logprior(params, ifmr_x, outliers=False):
 
     return sum(log_priors)
 
-def logpost_DWD(params, DWD, ifmr_x):
+def setup_params_IFMR(all_params, ifmr_x, outliers=False):
+    if outliers:
+        P_weird, scale_weird, Teff_err, logg_err, *ifmr_y = all_params
+        params = P_weird, scale_weird, Teff_err, logg_err
+    else:
+        Teff_err, logg_err, *ifmr_y = all_params
+        params = Teff_err, logg_err
+    return params, create_IFMR(ifmr_x, ifmr_y)
+
+def logpost_DWD(all_params, DWD, ifmr_x):
     """
     Test posterior for fitting a single DWD only
     """
-    lp = logprior(params, ifmr_x)
-    return lp if lp == -np.inf else lp + loglike_DWD(params, DWD, ifmr_x)
+    params, IFMR = setup_params_IFMR(all_params, ifmr_x)
+    lp = logprior(params, IFMR)
+    return lp if lp == -np.inf else lp + loglike_DWD(params, DWD, IFMR)
 
-def logpost_DWDs(params, DWDs, ifmr_x, outliers=False):
+def logpost_DWDs(all_params, DWDs, ifmr_x, outliers=False):
     """
     Posterior distribution for fitting IFMR to all DWDs
     """
-    lp = logprior(params, ifmr_x, outliers)
-    return lp if lp == -np.inf else lp + loglike_DWDs(params, DWDs, ifmr_x, outliers)
+    params, IFMR = setup_params_IFMR(all_params, ifmr_x, outliers)
+    lp = logprior(params, IFMR, outliers)
+    return lp if lp == -np.inf else lp + loglike_DWDs(params, DWDs, IFMR, outliers)
