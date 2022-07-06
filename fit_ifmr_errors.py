@@ -1,6 +1,5 @@
 import os
 os.environ["OMP_NUM_THREADS"] = "1"
-import pickle
 from multiprocessing import Pool
 import numpy as np
 import emcee
