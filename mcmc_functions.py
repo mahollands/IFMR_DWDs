@@ -8,9 +8,9 @@ from scipy import stats
 from math import log
 from misc import generate_IFMR, draw_mass_samples, grad_IFMR_i
 
-MONOTONIC_IFMR = False
+MONOTONIC_IFMR = True
 N_MARGINALISE = 1600
-OUTLIER_DTAU_DIST = "normal" #one of ['normal', 'logit normal', 'uniform', 'beta']
+OUTLIER_DTAU_DIST = "uniform" #one of ['normal', 'logit normal', 'uniform', 'beta']
 
 #MS lifetime from MESA data
 M_init, t_pre = np.loadtxt("MESA_lifetime.dat", unpack=True, skiprows=1)
@@ -32,12 +32,12 @@ def get_outlier_dtau_distribution(dist_name):
         return stats.norm.logpdf(dtau, loc=0, scale=scale)
 
     def outlier_logit_norm(dtau, scale):
-        z = 0.5*(dtau/13.8+1)
+        z = 0.5*(dtau/13.8 + 1)
         logit_z = np.log(z/(1-z))
         return stats.norm.logpdf(logit_z, loc=0, scale=scale) - np.log(2*13.8*(z*(1-z)))
 
     def outlier_uniform(dtau, scale):
-        return stats.uniform.logpdf(dtau, -13.8, 13.8)
+        return stats.uniform.logpdf(dtau, -13.8, 2*13.8)
 
     def outlier_beta(dtau, scale):
         return stats.beta.logpdf(dtau, scale, scale, loc=-13.8, scale=2*13.8)
@@ -190,8 +190,8 @@ def logprior(params, ifmr_x, outliers=False):
     if outliers:
         log_priors += [
             stats.arcsine.logpdf(P_weird) if outliers else 0,
-            #stats.rayleigh.logpdf(scale_weird, scale=1) if outliers else 0,
-            -log(scale_weird),
+            stats.rayleigh.logpdf(scale_weird, scale=1) if outliers else 0,
+            #-log(scale_weird),
         ]
 
     return sum(log_priors)
