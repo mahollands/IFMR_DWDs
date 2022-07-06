@@ -47,7 +47,5 @@ def draw_Mi_samples(vecM, covM, IFMR, N_MARGINALISE):
     ok = np.all(ok, axis=1)
     Mf12 = Mf12[ok,:]
     Mi12 = IFMR.inv(Mf12)
-    ok = (Mi12 > 0.6) & (Mi12 < 8.0) #MSLT table limits
-    ok = np.all(ok, axis=1)
     return Mi12[ok,:].T, Mf12[ok,:]
 

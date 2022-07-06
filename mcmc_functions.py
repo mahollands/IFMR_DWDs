@@ -81,6 +81,8 @@ def logprior_Mi12(Mi1, Mi2):
     """
     priors on inital masses
     """
+    if not (0.6 < Mi1 < 8.0 and 0.6 < Mi2 < 8.0):
+        return -np.inf
     return -2.35*log(Mi1*Mi2) #Lazy Salpeter IMF as initial mass prior
 
 def logpost_Mi12(Mi12, vec, cov, IFMR):
