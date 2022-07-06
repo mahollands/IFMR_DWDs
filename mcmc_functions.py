@@ -3,10 +3,9 @@ MCMC routines for IFMR fitting with DWD binaries
 """
 import numpy as np
 import numba
-from scipy.interpolate import interp1d
 from scipy import stats
 from math import log
-from misc import create_IFMR, draw_mass_samples, MSLT
+from misc import create_IFMR, draw_Mi_samples, MSLT
 
 MONOTONIC_IFMR = True
 N_MARGINALISE = 1600
