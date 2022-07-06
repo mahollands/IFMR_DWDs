@@ -112,7 +112,7 @@ def loglike_DWD(params, DWD, IFMR, outliers=False):
     covMdtau = DWD.covMdtau_systematics(Teff_err, logg_err)
     vecM, covM = DWD.vecMdtau[:2], covMdtau[:2,:2]
 
-    Mi12, Mf12 = draw_mass_samples(vecM, covM, IFMR, N_MARGINALISE)
+    Mi12, Mf12 = draw_Mi_samples(vecM, covM, IFMR, N_MARGINALISE)
     if len(Mf12) == 0:
         return -np.inf
     jac1, jac2 = IFMR.inv_grad(Mf12).T

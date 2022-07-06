@@ -25,7 +25,7 @@ class create_IFMR(interp1d):
     def __init__(self, ifmr_x, ifmr_y):
         super().__init__(ifmr_x, ifmr_y)
         self.inv = interp1d(ifmr_y, ifmr_x)
-        self._grads = np.diff(ifmr_x)/np.diff(ifmr_y)
+        self.i_grads = np.diff(ifmr_x)/np.diff(ifmr_y)
         self.mf_mi = ifmr_y/ifmr_x
 
     def inv_grad(self, Mf):
@@ -35,9 +35,9 @@ class create_IFMR(interp1d):
         gets the jacobian dMi/dMf
         """
         segments = [Mf < y for y in self.y[1:]]
-        return np.select(segments, self._grads)
+        return np.select(segments, self.i_grads)
 
-def draw_mass_samples(vecM, covM, IFMR, N_MARGINALISE):
+def draw_Mi_samples(vecM, covM, IFMR, N_MARGINALISE):
     """
     Using central values for final masses and the joint covariance matrix
     calculate initial masses and the IFMR jacobian using an IFMR
