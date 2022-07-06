@@ -60,7 +60,9 @@ def loglike_Mi12(Mi12, vec, cov, IFMR, outliers=False, scale_weird=None):
         ll1 =  stats.multivariate_normal.logpdf(X[:2].T, mean=vec[:2], cov=cov[:2,:2])
         ll2 = outlier_dtau_dist(dtau, scale_weird)
         return ll1 + ll2
-    return stats.multivariate_normal.logpdf(X.T, mean=vec, cov=cov)
+    ll = stats.multivariate_normal.logpdf(X.T, mean=vec, cov=cov)
+    #ll[np.abs(dtau) > 13.8] = -np.inf
+    return ll
 
 def loglike_Mi12_outliers(Mi12, vec, cov, IFMR, P_weird, scale_weird, separate=False):
     """
@@ -85,22 +87,6 @@ def logprior_Mi12(Mi1, Mi2):
         return -np.inf
     return -2.35*log(Mi1*Mi2) #Lazy Salpeter IMF as initial mass prior
 
-def logpost_Mi12(Mi12, vec, cov, IFMR):
-    """
-    Posterior probablity without outliers for a DWD with Mi1 and Mi2 samples.
-    """
-    lp = logprior_Mi12(*Mi12)
-    ll = loglike_Mi12(Mi12, vec, cov, IFMR)
-    return lp + ll
-
-def logpost_Mi12_outliers(Mi12, vec, cov, IFMR, P_weird=None, scale_weird=None):
-    """
-    Posterior probablity with outliers for a DWD with Mi1 and Mi2 samples.
-    """
-    lp = logprior_Mi12(*Mi12)
-    ll = loglike_Mi12_outliers(Mi12, vec, cov, IFMR, P_weird, scale_weird)
-    return lp + ll
-
 def loglike_DWD(params, DWD, IFMR, outliers=False):
     """
     Marginal distribution :
@@ -120,10 +106,11 @@ def loglike_DWD(params, DWD, IFMR, outliers=False):
 
     #importance sampling
     if outliers:
-        log_probs = logpost_Mi12_outliers(Mi12, DWD.vecMdtau, covMdtau, \
+        log_like = loglike_Mi12_outliers(Mi12, DWD.vecMdtau, covMdtau, \
             IFMR, P_weird, scale_weird)
     else:
-        log_probs = logpost_Mi12(Mi12, DWD.vecMdtau, covMdtau, IFMR)
+        log_like = loglike_Mi12(Mi12, DWD.vecMdtau, covMdtau, IFMR)
+    log_probs = logprior_Mi12(*Mi12) + log_like
     log_weights = -stats.multivariate_normal.logpdf(Mf12, mean=vecM, cov=covM)
     integrand = np.exp(log_probs + log_weights) * jac1 * jac2
     I = np.mean(integrand)
