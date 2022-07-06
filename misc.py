@@ -1,12 +1,26 @@
 import numpy as np
 from scipy.interpolate import interp1d
+from itertools import tee
+
+#MS lifetime from MESA data
+M_init, t_pre = np.loadtxt("MESA_lifetime.dat", unpack=True, skiprows=1)
+t_pre /= 1e9 #to Gyr
+log_tau_fun = interp1d(M_init, np.log10(t_pre), kind='cubic', bounds_error=False)
+
+def MSLT(Mi):
+    """
+    Main sequence lifetime
+    """
+    return 10**log_tau_fun(Mi)
 
 def pairwise(collection):
     """
     Roughly recreates the python 3.10 itertools.pairwise. Will only work for
     collections, not iterators.
     """
-    return zip(collection, collection[1:])
+    a, b = tee(iterable)
+    next(b, None)
+    return zip(a, b)
 
 def generate_IFMR(ifmr_x, ifmr_y):
     """
