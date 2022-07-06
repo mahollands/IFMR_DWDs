@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from mcmc_functions import MSLT, loglike_Mi12_outliers
 from scipy.interpolate import interp1d
 from DWD_class import load_DWDs
+from misc import generate_IFMR
 
 BURN = -50
 PLOT_CHAINS = True
@@ -56,8 +57,8 @@ def IFMR_figure(final):
 
     final_ = final[:,-len(ifmr_x):]
     
-    plt.figure(figsize=(8, 8))
-    plt.subplot(2, 1, 1)
+    plt.figure(figsize=(16, 8))
+    plt.subplot(1, 2, 1)
     for ifmr_y in final_:
         plt.plot(ifmr_x, ifmr_y, 'k-', alpha=0.05)
     plt.plot(ifmr_x, np.percentile(final_, 16, axis=0), 'C1-')
@@ -70,7 +71,7 @@ def IFMR_figure(final):
     plt.xlabel("Mi [Msun]")
     plt.ylabel("Mf [Msun]")
 
-    plt.subplot(2, 1, 2)
+    plt.subplot(1, 2, 2)
     for ifmr_y in final_:
         plt.plot(ifmr_x, ifmr_y/ifmr_x, 'k-', alpha=0.05)
     plt.plot(ifmr_x, np.percentile(final_, 16, axis=0)/ifmr_x, 'C1-')
@@ -86,7 +87,7 @@ def IFMR_figure(final):
     plt.show()
 
 def total_ages_figure(final, DWD):
-    plt.figure(DWD.name)
+    plt.figure(DWD.name, figsize=(6, 6))
     plt.plot([0,15], [0,15], 'k:')
     P_coeval = []
     for params in final:
@@ -94,34 +95,35 @@ def total_ages_figure(final, DWD):
             P_weird, scale_weird, Teff_err, logg_err, *ifmr_y = params
         else:
             Teff_err, logg_err, *ifmr_y = params
-        IFMR, IFMR_i = interp1d(ifmr_x, ifmr_y), interp1d(ifmr_y, ifmr_x)
+        IFMR = generate_IFMR(ifmr_x, ifmr_y)
         covMtau = DWD.covMtau_systematics(Teff_err, logg_err)
 
         Mf1, Mf2, tau1, tau2 = np.random.multivariate_normal(DWD.vecMtau, covMtau)
-        if not all(ifmr_y[0] < Mf < ifmr_y[-1] for Mf in (Mf1, Mf2)):
-            return
-        Mi1, Mi2 = IFMR_i(Mf1), IFMR_i(Mf2)
+        if not (ifmr_y[0] < Mf1 < ifmr_y[-1] and ifmr_y[0] < Mf2 < ifmr_y[-1]):
+            continue
+        Mi1, Mi2 = IFMR.inv([Mf1, Mf2])
+
+        Mi12 = np.array([Mi1, Mi2])
 
         if OUTLIERS:
-            covMdtau = DWD.covMdtau_systematics(Teff_err, logg_err)
-            logL_coeval, logL_weird = loglike_Mi12_outliers(Mi1, Mi2, \
-                DWD.vecMdtau, covMdtau, IFMR, P_weird, scale_weird, separate=True)
-            logL_tot = np.logaddexp(logL_coeval, logL_weird)
-            P_coeval.append(np.exp(logL_coeval-logL_tot))
+            if not (0.6 < Mi1 < 8 and 0.6 < Mf2 < 8):
+                P_i = 0
+            else:
+                covMdtau = DWD.covMdtau_systematics(Teff_err, logg_err)
+                logL_coeval, logL_weird = loglike_Mi12_outliers(Mi12, \
+                    DWD.vecMdtau, covMdtau, IFMR, P_weird, scale_weird, separate=True)
+                logL_tot = np.logaddexp(logL_coeval, logL_weird)
+                P_i = float(np.exp(logL_coeval-logL_tot))
+            P_coeval.append(P_i)
 
         t1, t2 = MSLT(Mi1), MSLT(Mi2)
-        dt = t1-t2
-        plt.plot(t1+tau1, t2+tau2, 'C0.', ms=1)
+        if OUTLIERS:
+            plt.scatter(t1+tau1, t2+tau2, s=1, c=P_i, vmin=0, vmax=1, )
+        else:
+            plt.plot(t1+tau1, t2+tau2, 'C0.', ms=1)
 
-        covMtau = DWD.covMtau_systematics(0, 0)
-        Mf1, Mf2, tau1, tau2 = np.random.multivariate_normal(DWD.vecMtau, covMtau)
-        if not all(ifmr_y[0] < Mf < ifmr_y[-1] for Mf in (Mf1, Mf2)):
-            plt.close()
-            return
-        Mi1, Mi2 = IFMR_i(Mf1), IFMR_i(Mf2)
-
-        t1, t2 = MSLT(Mi1), MSLT(Mi2)
-        plt.plot(t1+tau1, t2+tau2, 'C1.', ms=1)
+    P_coeval = np.array(P_coeval)
+    print(DWD.name, np.mean(P_coeval), np.median(P_coeval))
 
     plt.loglog()
     plt.xlim(0.2, 13)
@@ -132,11 +134,11 @@ def total_ages_figure(final, DWD):
     plt.xlabel("t_tot1 [Gyr]")
     plt.ylabel("t_tot2 [Gyr]")
     if OUTLIERS:
-        plt.title("$P_\mathrm{{coeval}}$ = {:.3f}".format(np.median(P_coeval)))
+        plt.title("$P_\mathrm{{coeval}}$ = {:.3f}".format(np.mean(P_coeval)))
     plt.tight_layout()
     plt.savefig(f"age_plots/{DWD.name}.png", dpi=200)
     plt.close()
-    print(DWD.name, np.mean(P_coeval), np.median(P_coeval))
+    #plt.show()
 
 if __name__ == "__main__":
     if PLOT_CHAINS:
