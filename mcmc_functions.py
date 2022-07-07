@@ -5,11 +5,11 @@ import numpy as np
 import numba
 from scipy import stats
 from math import log
-from misc import create_IFMR, draw_Mi_samples, MSLT
+from IFMR_tools import create_IFMR, draw_Mi_samples, MSLT
 
 MONOTONIC_IFMR = True
 N_MARGINALISE = 1600
-OUTLIER_DTAU_DIST = "normal" #one of ['normal', 'logit normal', 'uniform', 'beta']
+OUTLIER_DTAU_DIST = "logit normal" #one of ['normal', 'logit normal', 'uniform', 'beta']
 
 def get_outlier_dtau_distribution(dist_name):
     """
@@ -61,7 +61,8 @@ def loglike_Mi12(Mi12, vec, cov, IFMR, outliers=False, scale_weird=None):
         ll2 = outlier_dtau_dist(dtau, scale_weird)
         return ll1 + ll2
     ll = stats.multivariate_normal.logpdf(X.T, mean=vec, cov=cov)
-    #ll[np.abs(dtau) > 13.8] = -np.inf
+    bad = (np.abs(dtau) > 13.8) | np.isnan(ll)
+    ll[bad] = -np.inf
     return ll
 
 def loglike_Mi12_outliers(Mi12, vec, cov, IFMR, P_weird, scale_weird, separate=False):
@@ -90,7 +91,7 @@ def logprior_Mi12(Mi1, Mi2):
 def loglike_DWD(params, DWD, IFMR, outliers=False):
     """
     Marginal distribution :
-    P(theta | DWD) = \\iint P(Mi1, Mi2, theta | DWD) dMi1 dMi2
+    P(DWD | theta) = \\iint P(Mi1, Mi2, DWD | theta) dMi1 dMi2
     """
     if outliers:
         P_weird, scale_weird, Teff_err, logg_err = params
@@ -100,7 +101,7 @@ def loglike_DWD(params, DWD, IFMR, outliers=False):
     vecM, covM = DWD.vecMdtau[:2], covMdtau[:2,:2]
 
     Mi12, Mf12 = draw_Mi_samples(vecM, covM, IFMR, N_MARGINALISE)
-    if len(Mf12) == 0:
+    if len(Mf12) <= 1:
         return -np.inf
     jac1, jac2 = IFMR.inv_grad(Mf12).T
 

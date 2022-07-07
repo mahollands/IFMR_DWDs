@@ -3,13 +3,13 @@ os.environ["OMP_NUM_THREADS"] = "1"
 from multiprocessing import Pool
 import numpy as np
 import emcee
-from misc import pairwise
+from IFMR_tools import pairwise
 from mcmc_functions import logpost_DWDs
 from DWD_sets import good_DWDs_220630 as use_DWDs
 from DWD_class import load_DWDs
 
 N_CPU = 10
-Nwalkers, Nstep = 500, 100
+Nwalkers, Nstep = 100, 100
 f_MCMC_out = "IFMR_MCMC_outliers"
 ifmr_x = np.array([0.5, 1, 1.5, 2, 2.5, 3, 4, 6, 8])
 #ifmr_x = np.array([0, 2, 4, 8])

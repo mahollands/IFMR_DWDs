@@ -3,11 +3,11 @@ import corner
 import matplotlib.pyplot as plt
 from mcmc_functions import MSLT, loglike_Mi12_outliers
 from DWD_class import load_DWDs
-from misc import create_IFMR
+from IFMR_tools import create_IFMR
 
 BURN = -50
-PLOT_CHAINS = True
-PLOT_CORNER = True
+PLOT_CHAINS = False
+PLOT_CORNER = False
 PLOT_IFMR = True
 PLOT_TOTAL_AGES = True
 OUTLIERS = True
@@ -58,6 +58,8 @@ def IFMR_figure(final):
     
     plt.figure(figsize=(16, 8))
     plt.subplot(1, 2, 1)
+    for x in ifmr_x:
+        plt.axvline(x, c='C3', ls=':', alpha=0.5) 
     for ifmr_y in final_:
         plt.plot(ifmr_x, ifmr_y, 'k-', alpha=0.05)
     plt.plot(ifmr_x, np.percentile(final_, 16, axis=0), 'C1-')
@@ -71,6 +73,8 @@ def IFMR_figure(final):
     plt.ylabel("Mf [Msun]")
 
     plt.subplot(1, 2, 2)
+    for x in ifmr_x:
+        plt.axvline(x, c='C3', ls=':', alpha=0.5) 
     for ifmr_y in final_:
         plt.plot(ifmr_x, ifmr_y/ifmr_x, 'k-', alpha=0.05)
     plt.plot(ifmr_x, np.percentile(final_, 16, axis=0)/ifmr_x, 'C1-')
