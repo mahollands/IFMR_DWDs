@@ -61,7 +61,7 @@ def loglike_Mi12(Mi12, vec, cov, IFMR, outliers=False, scale_weird=None):
         ll_dtau = outlier_dtau_dist(dtau_cool, scale_weird)
         return ll_Mf12 + ll_dtau
     ll = stats.multivariate_normal.logpdf(X.T, mean=vec, cov=cov)
-    bad = (np.abs(dtau) > 13.8) | np.isnan(ll)
+    bad = (np.abs(dtau_cool) > 13.8) | np.isnan(ll)
     ll[bad] = -np.inf
     return ll
 
