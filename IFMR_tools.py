@@ -21,7 +21,7 @@ def pairwise(iterable):
     next(b, None)
     return zip(a, b)
 
-class create_IFMR(interp1d):
+class IFMR_cls(interp1d):
     def __init__(self, ifmr_x, ifmr_y):
         super().__init__(ifmr_x, ifmr_y)
         self.inv = interp1d(ifmr_y, ifmr_x)

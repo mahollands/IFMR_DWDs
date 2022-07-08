@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import argparse
-from IFMR_tools import create_IFMR
+from IFMR_tools import IFMR_cls
 
 parser = argparse.ArgumentParser()
 parser.add_argument("Mf_mean", type=float, \
@@ -28,7 +28,7 @@ chain = np.load(f"MCMC_output/{f_MCMC_out}_chain.npy")
 final = chain[:,-1,:]
 
 Nskip = 4 if args.outliers else 2
-IFMRs = [create_IFMR(ifmr_x, ifmr_y) for ifmr_y in final[:,Nskip:]]
+IFMRs = [IFMR_cls(ifmr_x, ifmr_y) for ifmr_y in final[:,Nskip:]]
 
 Mf = np.random.normal(args.Mf_mean, args.Mf_err, len(IFMRs))
 Mi = np.array([IFMR.inv(mf) for IFMR, mf in zip(IFMRs, Mf) \

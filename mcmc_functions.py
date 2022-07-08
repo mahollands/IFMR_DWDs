@@ -5,7 +5,7 @@ import numpy as np
 import numba
 from scipy import stats
 from math import log
-from IFMR_tools import create_IFMR, draw_Mi_samples, MSLT
+from IFMR_tools import IFMR_cls, draw_Mi_samples, MSLT
 
 MONOTONIC_IFMR = True
 N_MARGINALISE = 1600
@@ -173,7 +173,7 @@ def setup_params_IFMR(all_params, ifmr_x, outliers=False):
     else:
         Teff_err, logg_err, *ifmr_y = all_params
         params = Teff_err, logg_err
-    return params, create_IFMR(ifmr_x, ifmr_y)
+    return params, IFMR_cls(ifmr_x, ifmr_y)
 
 def logpost_DWD(all_params, DWD, ifmr_x):
     """

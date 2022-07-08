@@ -3,7 +3,7 @@ os.environ["OMP_NUM_THREADS"] = "1"
 from multiprocessing import Pool
 import numpy as np
 import emcee
-from IFMR_tools import pairwise, create_IFMR
+from IFMR_tools import pairwise, IFMR_cls
 from mcmc_functions import logpost_DWDs
 from DWD_sets import bad_DWDs_220701 as dont_use_DWDs
 from DWD_class import load_DWDs
@@ -13,7 +13,7 @@ Nwalkers, Nstep = 1000, 5000
 f_MCMC_out = "IFMR_MCMC_outliers"
 ifmr_x = np.array([0.5, 2, 4, 8])
 ifmr_y = np.array([0.15, 0.6, 0.85, 1.4])
-IFMR_true = create_IFMR(ifmr_x, ifmr_y)
+IFMR_true = IFMR_cls(ifmr_x, ifmr_y)
 
 ###########################################################################
 # MCMC starts here

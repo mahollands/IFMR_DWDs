@@ -3,7 +3,7 @@ import corner
 import matplotlib.pyplot as plt
 from mcmc_functions import MSLT, loglike_Mi12_outliers
 from DWD_class import load_DWDs
-from IFMR_tools import create_IFMR
+from IFMR_tools import IFMR_cls
 
 BURN = -50
 PLOT_CHAINS = False
@@ -98,7 +98,7 @@ def total_ages_figure(final, DWD):
             P_weird, scale_weird, Teff_err, logg_err, *ifmr_y = params
         else:
             Teff_err, logg_err, *ifmr_y = params
-        IFMR = create_IFMR(ifmr_x, ifmr_y)
+        IFMR = IFMR_cls(ifmr_x, ifmr_y)
         covMtau = DWD.covMtau_systematics(Teff_err, logg_err)
 
         Mf1, Mf2, tau1, tau2 = np.random.multivariate_normal(DWD.vecMtau, covMtau)
