@@ -52,14 +52,14 @@ def loglike_Mi12(Mi12, vec, cov, IFMR, outliers=False, scale_weird=None):
     contains a vector of Mf1, Mf2, dtau_cool and the corresponding covariance
     matrix.
     """
-    tau1, tau2 = MSLT(Mi12)
-    dtau = tau2-tau1
+    tau1_ms, tau2_ms = MSLT(Mi12)
+    dtau_cool = tau2_ms-tau1_ms
     Mf1, Mf2 = IFMR(Mi12)
-    X = np.array([Mf1, Mf2, dtau])
+    X = np.array([Mf1, Mf2, dtau_cool])
     if outliers:
-        ll1 =  stats.multivariate_normal.logpdf(X[:2].T, mean=vec[:2], cov=cov[:2,:2])
-        ll2 = outlier_dtau_dist(dtau, scale_weird)
-        return ll1 + ll2
+        ll_Mf12 = stats.multivariate_normal.logpdf(X[:2].T, mean=vec[:2], cov=cov[:2,:2])
+        ll_dtau = outlier_dtau_dist(dtau_cool, scale_weird)
+        return ll_Mf12 + ll_dtau
     ll = stats.multivariate_normal.logpdf(X.T, mean=vec, cov=cov)
     bad = (np.abs(dtau) > 13.8) | np.isnan(ll)
     ll[bad] = -np.inf
