@@ -20,7 +20,7 @@ def get_outlier_dtau_distribution(dist_name):
         - "uniform"
         - "beta"
     In all cases, arguments are the dtau array, and the distibution scale (this
-    has no effect for the uniform distribution.
+    has no effect for the uniform distribution, other than simplying the prior).
     """
     def outlier_norm(dtau, scale):
         return stats.norm.logpdf(dtau, loc=0, scale=scale)
@@ -48,9 +48,9 @@ outlier_dtau_dist = get_outlier_dtau_distribution(OUTLIER_DTAU_DIST)
 
 def loglike_Mi12(Mi12, vec, cov, IFMR, outliers=False, scale_weird=None):
     """
-    params are the MS star masses and the y values of the IFMR at values. DWD
-    contains a vector of Mf1, Mf2, dtau_cool and the corresponding covariance
-    matrix.
+    Computes the likelihood of an IFMR and initial masses for parameters
+    of final masses and difference in WD cooling ages and their covariance.
+    This is optionally computed for either the coeval or outlier distributions.
     """
     tau1_ms, tau2_ms = MSLT(Mi12)
     dtau_cool = tau2_ms-tau1_ms
@@ -67,9 +67,10 @@ def loglike_Mi12(Mi12, vec, cov, IFMR, outliers=False, scale_weird=None):
 
 def loglike_Mi12_outliers(Mi12, vec, cov, IFMR, P_weird, scale_weird, separate=False):
     """
-    P_weird is the probability that any DWD is weird, scale_weird is the
-    variance of cooling age differences for weird DWDs. The likelihood
-    is a mixture model of the coeval and non-coeval likelihoods.
+    Computes the likelihood of an IFMR and initial masses for parameters
+    of final masses and difference in WD cooling ages and their covariance,
+    and under the assumption of a fraction of systems being outliers drawn
+    from an alternative distribution.
     """
     args = Mi12, vec, cov, IFMR
     logL_coeval  = loglike_Mi12(*args, outliers=False) + log(1-P_weird)
@@ -82,7 +83,7 @@ def loglike_Mi12_outliers(Mi12, vec, cov, IFMR, P_weird, scale_weird, separate=F
 @numba.vectorize
 def logprior_Mi12(Mi1, Mi2):
     """
-    priors on inital masses
+    Priors on inital masses
     """
     if not (0.6 < Mi1 < 8.0 and 0.6 < Mi2 < 8.0):
         return -np.inf
@@ -103,7 +104,6 @@ def loglike_DWD(params, DWD, IFMR, outliers=False):
     Mi12, Mf12 = draw_Mi_samples(vecM, covM, IFMR, N_MARGINALISE)
     if len(Mf12) <= 1:
         return -np.inf
-    jac1, jac2 = IFMR.inv_grad(Mf12).T
 
     #importance sampling
     if outliers:
@@ -113,6 +113,7 @@ def loglike_DWD(params, DWD, IFMR, outliers=False):
         log_like = loglike_Mi12(Mi12, DWD.vecMdtau, covMdtau, IFMR)
     log_probs = logprior_Mi12(*Mi12) + log_like
     log_weights = -stats.multivariate_normal.logpdf(Mf12, mean=vecM, cov=covM)
+    jac1, jac2 = IFMR.inv_grad(Mf12).T
     integrand = np.exp(log_probs + log_weights) * jac1 * jac2
     I = np.mean(integrand)
 
