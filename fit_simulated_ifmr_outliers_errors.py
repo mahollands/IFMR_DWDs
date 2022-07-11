@@ -5,15 +5,12 @@ import numpy as np
 import emcee
 from IFMR_tools import pairwise, IFMR_cls
 from mcmc_functions import logpost_DWDs
-from DWD_sets import bad_DWDs_220701 as dont_use_DWDs
-from DWD_class import load_DWDs
+import pickle
 
 N_CPU = 10
-Nwalkers, Nstep = 1000, 5000
-f_MCMC_out = "IFMR_MCMC_outliers"
+Nwalkers, Nstep = 100, 500
+f_MCMC_out = "IFMR_MCMC_simulated_outliers"
 ifmr_x = np.array([0.5, 2, 4, 8])
-ifmr_y = np.array([0.15, 0.6, 0.85, 1.4])
-IFMR_true = IFMR_cls(ifmr_x, ifmr_y)
 
 ###########################################################################
 # MCMC starts here
@@ -41,5 +38,6 @@ def run_MCMC(DWDs):
     np.save(f"MCMC_output/{f_MCMC_out}_lnprob.npy", sampler.lnprobability)
 
 if __name__ == "__main__":
-    DWDs = load_DWDs(exclude_set=dont_use_DWDs)
+    with open("DWDs_simulated.pkl", 'rb') as F:
+        DWDs = pickle.load(F)
     run_MCMC(DWDs)

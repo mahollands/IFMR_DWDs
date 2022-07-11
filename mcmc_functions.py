@@ -9,7 +9,7 @@ from IFMR_tools import IFMR_cls, draw_Mi_samples, MSLT
 
 MONOTONIC_IFMR = True
 N_MARGINALISE = 1600
-OUTLIER_DTAU_DIST = "logit normal" #one of ['normal', 'logit normal', 'uniform', 'beta']
+OUTLIER_DTAU_DIST = "normal" #one of ['normal', 'logit normal', 'uniform', 'beta']
 
 def get_outlier_dtau_distribution(dist_name):
     """
@@ -61,8 +61,8 @@ def loglike_Mi12(Mi12, vec, cov, IFMR, outliers=False, scale_weird=None):
         ll_dtau = outlier_dtau_dist(dtau_cool, scale_weird)
         return ll_Mf12 + ll_dtau
     ll = stats.multivariate_normal.logpdf(X.T, mean=vec, cov=cov)
-    bad = (np.abs(dtau_cool) > 13.8) | np.isnan(ll)
-    ll[bad] = -np.inf
+    #bad = (np.abs(dtau_cool) > 13.8) | np.isnan(ll)
+    #ll[bad] = -np.inf
     return ll
 
 def loglike_Mi12_outliers(Mi12, vec, cov, IFMR, P_weird, scale_weird, separate=False):
@@ -160,8 +160,8 @@ def logprior(params, IFMR, outliers=False):
     if outliers:
         log_priors += [
             stats.arcsine.logpdf(P_weird) if outliers else 0,
-            stats.rayleigh.logpdf(scale_weird, scale=1) if outliers else 0,
-            #-log(scale_weird),
+            #stats.rayleigh.logpdf(scale_weird, scale=1) if outliers else 0,
+            -log(scale_weird),
         ]
 
     return sum(log_priors)

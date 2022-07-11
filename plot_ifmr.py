@@ -1,3 +1,4 @@
+import pickle
 import numpy as np
 import corner
 import matplotlib.pyplot as plt
@@ -6,14 +7,21 @@ from DWD_class import load_DWDs
 from IFMR_tools import IFMR_cls
 
 BURN = -50
-PLOT_CHAINS = False
+PLOT_CHAINS = True
 PLOT_CORNER = False
 PLOT_IFMR = True
 PLOT_TOTAL_AGES = True
 OUTLIERS = True
+SIMULATED = True
 
 if OUTLIERS:
-    from fit_ifmr_outliers_errors import ifmr_x, f_MCMC_out
+    if SIMULATED:
+        from fit_simulated_ifmr_outliers_errors import ifmr_x, f_MCMC_out
+        from simulated_population import IFMR_true, TEFF_ERR, LOGG_ERR, \
+            SIGMA_WEIRD
+        params_true = [0.2, SIGMA_WEIRD, TEFF_ERR, LOGG_ERR, *IFMR_true.y]
+    else:
+        from fit_ifmr_outliers_errors import ifmr_x, f_MCMC_out
 else:
     from fit_ifmr_errors import ifmr_x, f_MCMC_out
 
@@ -39,6 +47,8 @@ def chain_figure(chain, final, Ndim, Nwalkers):
         plt.plot(np.median(chain[:,:,idim], axis=0), 'r-')
         for pc in (16, 84):
             plt.plot(np.percentile(chain[:,:,idim], pc, axis=0), 'C1-')
+        if OUTLIERS and SIMULATED:
+            plt.axhline(params_true[idim], c='b', ls=':')
         plt.ylabel(label)
     plt.tight_layout()
     plt.savefig("IFMR_chains.png", dpi=200)
@@ -65,6 +75,8 @@ def IFMR_figure(final):
     plt.plot(ifmr_x, np.percentile(final_, 16, axis=0), 'C1-')
     plt.plot(ifmr_x, np.median(final_, axis=0), 'r-')
     plt.plot(ifmr_x, np.percentile(final_, 84, axis=0), 'C1-')
+    if SIMULATED:
+        plt.plot(IFMR_true.x, IFMR_true.y, 'b-')
     plt.plot([0, 8], [0., 8.], 'b:')
     plt.axhline(1.4, c='r', ls=':')
     plt.xlim(0, 8)
@@ -80,6 +92,8 @@ def IFMR_figure(final):
     plt.plot(ifmr_x, np.percentile(final_, 16, axis=0)/ifmr_x, 'C1-')
     plt.plot(ifmr_x, np.median(final_, axis=0)/ifmr_x, 'r-')
     plt.plot(ifmr_x, np.percentile(final_, 84, axis=0)/ifmr_x, 'C1-')
+    if SIMULATED:
+        plt.plot(IFMR_true.x, IFMR_true.mf_mi, 'b-')
     plt.xlim(0, 8)
     plt.ylim(0, 1.0)
     plt.xlabel("$M_i$ [M$_\odot$]")
@@ -159,6 +173,10 @@ if __name__ == "__main__":
         IFMR_figure(final)
 
     if PLOT_TOTAL_AGES:
-        DWDs = load_DWDs()
+        if SIMULATED:
+            with open("DWDs_simulated.pkl", 'rb') as F:
+                DWDs = pickle.load(F)
+        else:
+            DWDs = load_DWDs()
         for DWD in DWDs:
             total_ages_figure(final, DWD)
