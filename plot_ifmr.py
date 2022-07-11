@@ -56,7 +56,7 @@ def IFMR_figure(final):
 
     final_ = final[:,-len(ifmr_x):]
     
-    plt.figure(figsize=(16, 8))
+    plt.figure(figsize=(12, 6))
     plt.subplot(1, 2, 1)
     for x in ifmr_x:
         plt.axvline(x, c='C3', ls=':', alpha=0.5) 
@@ -69,8 +69,8 @@ def IFMR_figure(final):
     plt.axhline(1.4, c='r', ls=':')
     plt.xlim(0, 8)
     plt.ylim(0, 2.0)
-    plt.xlabel("Mi [Msun]")
-    plt.ylabel("Mf [Msun]")
+    plt.xlabel("$M_i$ [M$_\odot$]")
+    plt.ylabel("$M_f$ [M$_\odot$]")
 
     plt.subplot(1, 2, 2)
     for x in ifmr_x:
@@ -82,8 +82,8 @@ def IFMR_figure(final):
     plt.plot(ifmr_x, np.percentile(final_, 84, axis=0)/ifmr_x, 'C1-')
     plt.xlim(0, 8)
     plt.ylim(0, 1.0)
-    plt.xlabel("Mi [Msun]")
-    plt.ylabel("Mf/Mi")
+    plt.xlabel("$M_i$ [M$_\odot$]")
+    plt.ylabel("$M_f/M_i$")
 
     plt.tight_layout()
     plt.savefig("IFMR.png", dpi=200)
