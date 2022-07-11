@@ -87,7 +87,7 @@ def logprior_Mi12(Mi1, Mi2):
     """
     if not (0.6 < Mi1 < 8.0 and 0.6 < Mi2 < 8.0):
         return -np.inf
-    return -2.35*log(Mi1*Mi2) #Lazy Salpeter IMF as initial mass prior
+    return -2.3*log(Mi1*Mi2) #Kroupa IMF for m>0.5Msun 
 
 def loglike_DWD(params, DWD, IFMR, outliers=False):
     """
