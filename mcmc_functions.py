@@ -22,8 +22,8 @@ def get_outlier_dtau_distribution(dist_name):
     In all cases, arguments are the dtau array, and the distibution scale (this
     has no effect for the uniform distribution, other than simplying the prior).
     """
-    def outlier_norm(dtau, scale):
-        return stats.norm.logpdf(dtau, loc=0, scale=scale)
+    def outlier_norm(dtau, loc, scale):
+        return stats.norm.logpdf(dtau, loc=loc, scale=scale)
 
     def outlier_logit_norm(dtau, scale):
         z = 0.5*(dtau/13.8 + 1)
@@ -58,7 +58,7 @@ def loglike_Mi12(Mi12, vec, cov, IFMR, outliers=False, scale_weird=None):
     X = np.array([Mf1, Mf2, dtau_cool])
     if outliers:
         ll_Mf12 = stats.multivariate_normal.logpdf(X[:2].T, mean=vec[:2], cov=cov[:2,:2])
-        ll_dtau = outlier_dtau_dist(dtau_cool, scale_weird)
+        ll_dtau = outlier_dtau_dist(dtau_cool, vec[2], scale_weird)
         return ll_Mf12 + ll_dtau
     ll = stats.multivariate_normal.logpdf(X.T, mean=vec, cov=cov)
     #bad = (np.abs(dtau_cool) > 13.8) | np.isnan(ll)
@@ -152,7 +152,7 @@ def logprior(params, IFMR, outliers=False):
         return -np.inf
 
     log_priors = [
-        stats.arcsine.logpdf(IFMR.mf_mi).sum(),
+        stats.arcsine.logpdf(IFMR.Mf_Mi).sum(),
         -log(Teff_err),
         -log(logg_err),
     ]
