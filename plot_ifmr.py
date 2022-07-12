@@ -18,8 +18,8 @@ if OUTLIERS:
     if SIMULATED:
         from fit_simulated_ifmr_outliers_errors import ifmr_x, f_MCMC_out
         from simulated_population import IFMR_true, TEFF_ERR, LOGG_ERR, \
-            SIGMA_WEIRD
-        params_true = [0.2, SIGMA_WEIRD, TEFF_ERR, LOGG_ERR, *IFMR_true.y]
+            SIGMA_WEIRD, P_weird_true
+        params_true = [P_weird_true, SIGMA_WEIRD, TEFF_ERR, LOGG_ERR, *IFMR_true.y]
     else:
         from fit_ifmr_outliers_errors import ifmr_x, f_MCMC_out
 else:
