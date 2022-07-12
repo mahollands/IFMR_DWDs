@@ -65,11 +65,11 @@ def lnprob_figure(lnp, Nwalkers):
 def IFMR_figure(final):
 
     final_ = final[:,-len(ifmr_x):]
-    
+
     plt.figure(figsize=(12, 6))
     plt.subplot(1, 2, 1)
     for x in ifmr_x:
-        plt.axvline(x, c='C3', ls=':', alpha=0.5) 
+        plt.axvline(x, c='C3', ls=':', alpha=0.5)
     for ifmr_y in final_:
         plt.plot(ifmr_x, ifmr_y, 'k-', alpha=0.05)
     plt.plot(ifmr_x, np.percentile(final_, 16, axis=0), 'C1-')
@@ -86,14 +86,14 @@ def IFMR_figure(final):
 
     plt.subplot(1, 2, 2)
     for x in ifmr_x:
-        plt.axvline(x, c='C3', ls=':', alpha=0.5) 
+        plt.axvline(x, c='C3', ls=':', alpha=0.5)
     for ifmr_y in final_:
         plt.plot(ifmr_x, ifmr_y/ifmr_x, 'k-', alpha=0.05)
     plt.plot(ifmr_x, np.percentile(final_, 16, axis=0)/ifmr_x, 'C1-')
     plt.plot(ifmr_x, np.median(final_, axis=0)/ifmr_x, 'r-')
     plt.plot(ifmr_x, np.percentile(final_, 84, axis=0)/ifmr_x, 'C1-')
     if SIMULATED:
-        plt.plot(IFMR_true.x, IFMR_true.mf_mi, 'b-')
+        plt.plot(IFMR_true.x, IFMR_true.Mf_Mi, 'b-')
     plt.xlim(0, 8)
     plt.ylim(0, 1.0)
     plt.xlabel("$M_i$ [M$_\odot$]")

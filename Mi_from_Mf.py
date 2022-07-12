@@ -1,6 +1,10 @@
+"""
+Tool for converting final masses to initial masses, including uncertainies
+in the final mass and the IFMR itself.
+"""
+import argparse
 import numpy as np
 import matplotlib.pyplot as plt
-import argparse
 from IFMR_tools import IFMR_cls
 
 parser = argparse.ArgumentParser()

@@ -1,5 +1,8 @@
-import numpy as np
+"""
+Tools for Creating a DWD container object
+"""
 import pickle
+import numpy as np
 from mh.MR_relation import M_from_Teff_logg, tau_from_Teff_logg
 
 class DWDcontainer:
@@ -26,7 +29,7 @@ class DWDcontainer:
         """
         Add systematic uncertainties to Teff-logg covariance matrix
         """
-        T1, T2, g1, g2 = self.Tg_vec
+        T1, T2, *_ = self.Tg_vec
         err_syst = np.array([Teff_err*T1, Teff_err*T2, logg_err, logg_err])
         return self.Tg_cov + np.diag(err_syst**2)
 
@@ -90,11 +93,16 @@ def Taylor_Expand_DWD(Tg_vec):
     ])
     return vecMdtau, vecMtau, JacMdtau, JacMtau
 
-def load_DWDs(use_set=None, exclude_set=None):
+def load_DWDs(fname="DWDs_Teffs_loggs.pkl", use_set=None, exclude_set=None):
+    """
+    Read in DWDs from a pickled dictionary of Teff/logg measurements. Sets
+    of specific DWD names to use or exclude can be provided.
+    """
+
     if use_set is not None and exclude_set is not None:
         raise ValueError("Only one of use_set and exclude_set can be used")
 
-    with open("DWDs_Teffs_loggs.pkl", 'rb') as F:
+    with open(fname, 'rb') as F:
         DWD_dict = pickle.load(F)
 
     if use_set is not None:

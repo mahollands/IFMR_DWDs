@@ -4,8 +4,8 @@ with coeval and non-coeval systems.
 """
 import pickle
 import numpy as np
-from DWD_class import DWDcontainer
 from mh.MR_relation import logg_from_Teff_M, Teff_from_tau_M
+from DWD_class import DWDcontainer
 from IFMR_tools import MSLT, IFMR_cls
 
 M_MIN = 1.0 #minimum MS star mass
@@ -68,7 +68,7 @@ def simulated_DWD(outlier=False):
     if np.any(np.isnan(Tg_vec)):
         return None
 
-    return DWDcontainer("", Tg_vec, TG_COV) 
+    return DWDcontainer("", Tg_vec, TG_COV)
 
 def simulated_DWDs(N_coeval, N_weird):
     """

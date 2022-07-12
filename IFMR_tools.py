@@ -1,9 +1,9 @@
 """
 Routines and classes for working with Initial-Final Mass-Relations.
 """
+from itertools import tee
 import numpy as np
 from scipy.interpolate import interp1d
-from itertools import tee
 
 #MS lifetime from MESA data
 M_init, t_pre = np.loadtxt("MESA_lifetime.dat", unpack=True, skiprows=1)
@@ -68,7 +68,7 @@ class IFMR_cls(interp1d):
     @property
     def mass_loss(self):
         """
-        Fraction of mass lost as a function of Mi 
+        Fraction of mass lost as a function of Mi
         """
         return 1-self.Mf_Mi
 
@@ -84,4 +84,3 @@ def draw_Mi_samples(vecM, covM, IFMR, N_MARGINALISE):
     Mf12 = Mf12[ok,:]
     Mi12 = IFMR.inv(Mf12)
     return Mi12.T, Mf12
-

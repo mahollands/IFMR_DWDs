@@ -1,11 +1,11 @@
 import os
 os.environ["OMP_NUM_THREADS"] = "1"
 from multiprocessing import Pool
+import pickle
 import numpy as np
 import emcee
 from IFMR_tools import pairwise
 from mcmc_functions import logpost_DWDs
-import pickle
 
 N_CPU = 10
 Nwalkers, Nstep = 100, 500

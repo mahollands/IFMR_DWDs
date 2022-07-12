@@ -1,10 +1,10 @@
 """
 MCMC routines for IFMR fitting with DWD binaries
 """
+from math import log
 import numpy as np
 import numba
 from scipy import stats
-from math import log
 from IFMR_tools import IFMR_cls, draw_Mi_samples, MSLT
 
 MONOTONIC_IFMR = True
@@ -87,7 +87,7 @@ def logprior_Mi12(Mi1, Mi2):
     """
     if not (0.6 < Mi1 < 8.0 and 0.6 < Mi2 < 8.0):
         return -np.inf
-    return -2.3*log(Mi1*Mi2) #Kroupa IMF for m>0.5Msun 
+    return -2.3*log(Mi1*Mi2) #Kroupa IMF for m>0.5Msun
 
 def loglike_DWD(params, DWD, IFMR, outliers=False):
     """
@@ -130,13 +130,13 @@ def logprior(params, IFMR, outliers=False):
     priors on IFMR all ifmr parameters
     """
     if outliers:
-        P_weird, scale_weird, Teff_err, logg_err, *ifmr_y = params
+        P_weird, scale_weird, Teff_err, logg_err = params
         if not 0 < P_weird < 1:
             return -np.inf
         if scale_weird < 0:
             return -np.inf
     else:
-        Teff_err, logg_err, *ifmr_y = params
+        Teff_err, logg_err = params
 
     if Teff_err < 0:
         return -np.inf
@@ -144,7 +144,7 @@ def logprior(params, IFMR, outliers=False):
         return -np.inf
 
     #Mass loss, q must be 0 < q < 1
-    if not all(0 < q < 1 for q in IFMR.mf_mi):
+    if not all(0 < q < 1 for q in IFMR.Mf_Mi):
         return -np.inf
 
     #piecewise points in IFMR must be increasing
@@ -167,6 +167,11 @@ def logprior(params, IFMR, outliers=False):
     return sum(log_priors)
 
 def setup_params_IFMR(all_params, ifmr_x, outliers=False):
+    """
+    Takes a full set of parameters, and removes those corresponding
+    to IFMR y-values, instead returning a reduced set of parameters
+    and an IFMR object.
+    """
     if outliers:
         P_weird, scale_weird, Teff_err, logg_err, *ifmr_y = all_params
         params = P_weird, scale_weird, Teff_err, logg_err

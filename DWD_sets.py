@@ -85,7 +85,7 @@ bad_DWDs_220701 = {
     "runC_WDJ0120-1622AB", #terrible flux calibration
     "runD_WDJ1350-5025AB", #A component is a warm DC
 }
-    
+
 bad_DWDs_220705 = {
     "runA_WDJ1636+0927AB", #poor fit to magnetic
     "runC_WDJ0120-1622AB", #terrible flux calibration
@@ -93,7 +93,5 @@ bad_DWDs_220705 = {
     "runA_WDJ1827+0403AB", #B component v. low mass
     "runC_WDJ2122+3005AB", #B component v. low mass
     "runD_WDJ1211-4551AB", #B component v. low mass
-    "runD_WDJ1350-5025AB", #both component v. low mass
     "runD_WDJ1557-3832AB", #both component v. low mass
 }
-    
