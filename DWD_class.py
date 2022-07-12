@@ -4,7 +4,10 @@ from mh.MR_relation import M_from_Teff_logg, tau_from_Teff_logg
 
 class DWDcontainer:
     """
-    Class for storing information of a Double white dwarf system
+    Class for storing information of a double white dwarf system. This includes
+    the Teffs and loggs of both components, their covariance matrix of
+    measurement errors, the corresponding, masses/cooling ages, and their Jacobian
+    matrix for adding systematic errors to the Teff/logg
     """
     def __init__(self, name, Tg_vec, Tg_cov):
         self.name = name
@@ -63,6 +66,11 @@ def Taylor_Expand_WD(T, g, dT=10, dg=0.001, thickness='thick'):
     return Taylor_M, Taylor_tau
 
 def Taylor_Expand_DWD(Tg_vec):
+    """
+    Taylor expansion of M and tau for a double white dwarf system with measured
+    Teffs and loggs, returning the central M12/tau/dtau values and the
+    corresponding Jacobian matrices.
+    """
     (T1, T2, g1, g2) = Tg_vec
     (M1, dM1_dT1, dM1_dg1), (tau1, dtau1_dT1, dtau1_dg1) = Taylor_Expand_WD(T1, g1)
     (M2, dM2_dT2, dM2_dg2), (tau2, dtau2_dT2, dtau2_dg2) = Taylor_Expand_WD(T2, g2)
