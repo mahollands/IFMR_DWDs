@@ -3,7 +3,7 @@ os.environ["OMP_NUM_THREADS"] = "1"
 from multiprocessing import Pool
 import numpy as np
 import emcee
-from IFMR_tools import pairwise, IFMR_cls
+from IFMR_tools import pairwise
 from mcmc_functions import logpost_DWDs
 import pickle
 
