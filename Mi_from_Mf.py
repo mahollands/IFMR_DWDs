@@ -5,7 +5,7 @@ in the final mass and the IFMR itself.
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
-from IFMR_tools import IFMR_cls
+from IFMR_tools import IFMR_cls, MSLT
 
 parser = argparse.ArgumentParser()
 parser.add_argument("Mf_mean", type=float, \
@@ -44,9 +44,22 @@ Mi_errs = np.diff(Mi_pcs)
 if args.Mf_err > 0:
     Mf_str = "{:.2f}±{:.2f}".format(args.Mf_mean, args.Mf_err)
 else:
-    Mf_str = "{:.2f}".format(args.Mf_mean, args.Mf_err)
+    Mf_str = "{:.2f}".format(args.Mf_mean)
 Mi_str = "{:.2f}_-{:.2f}^+{:.2f}".format(Mi_pcs[1], *Mi_errs)
-print(f"Mf : {Mf_str} Msun ==> Mi : {Mi_str} Msun")
+
+t = MSLT(Mi)
+t_pcs = np.array([np.percentile(t, pc) for pc in (15.9, 50, 84.1)])
+if t_pcs[1] < 1:
+    t_pcs *= 1000
+    t_unit = "Myr"
+    t_fmt = "{:.0f}_-{:.0f}^+{:.0f}"
+else:
+    t_unit = "Gyr"
+    t_fmt = "{:.2f}_-{:.2f}^+{:.2f}"
+t_errs = np.diff(t_pcs)
+t_str = t_fmt.format(t_pcs[1], *t_errs)
+
+print(f"Mf : {Mf_str} Msun ==> Mi : {Mi_str} Msun, MS_t = {t_str} {t_unit}")
 
 if args.show:
     plt.hist(Mi, bins=np.arange(0, 8, 0.1), density=True, histtype='step')
