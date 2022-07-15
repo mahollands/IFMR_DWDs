@@ -9,7 +9,7 @@ from IFMR_tools import IFMR_cls, draw_Mi_samples, MSLT
 
 MONOTONIC_IFMR = True
 N_MARGINALISE = 1600
-OUTLIER_DTAU_DIST = "uniform" #one of ['normal', 'logit normal', 'uniform', 'beta']
+OUTLIER_DTAU_DIST = "normal" #one of ['normal', 'logit normal', 'uniform', 'beta']
 
 def get_outlier_dtau_distribution(dist_name):
     """
@@ -25,16 +25,19 @@ def get_outlier_dtau_distribution(dist_name):
     def outlier_norm(dtau, loc, scale):
         return stats.norm.logpdf(dtau, loc=loc, scale=scale)
 
-    def outlier_logit_norm(dtau, scale):
+    def outlier_logit_norm(dtau, loc, scale):
         z = 0.5*(dtau/13.8 + 1)
         logit_z = np.log(z/(1-z))
-        return stats.norm.logpdf(logit_z, loc=0, scale=scale) - np.log(2*13.8*(z*(1-z)))
+        z_mu = 0.5*(loc/13.8 + 1)
+        logit_z_mu = np.log(z_mu/(1-z_mu))
+        return stats.norm.logpdf(logit_z, loc=logit_z_mu, scale=scale) \
+            - np.log(2*13.8*z*(1-z))
 
     def outlier_uniform(dtau, loc, scale):
-        return stats.uniform.logpdf(dtau, loc=loc-scale_weird, 2*scale_weird)
+        return stats.uniform.logpdf(dtau, loc=loc-scale, scale=2*scale)
 
-    def outlier_beta(dtau, scale):
-        return stats.beta.logpdf(dtau, scale, scale, loc=-13.8, scale=2*13.8)
+    def outlier_beta(dtau, loc, scale):
+        return stats.beta.logpdf(dtau, scale, scale, loc=loc-13.8, scale=2*13.8)
 
     outlier_dist_options = {
         'normal' : outlier_norm,
@@ -75,6 +78,10 @@ def loglike_Mi12_outliers(Mi12, vec, cov, IFMR, P_weird, scale_weird, separate=F
     args = Mi12, vec, cov, IFMR
     logL_coeval  = loglike_Mi12(*args, outliers=False) + log(1-P_weird)
     logL_weird = loglike_Mi12(*args, outliers=True, scale_weird=scale_weird) + log(P_weird)
+
+    nan_coeval, nan_weird = np.isnan(logL_coeval), np.isnan(logL_weird)
+    logL_coeval[nan_coeval] = -np.inf
+    logL_weird[nan_weird] = -np.inf
 
     if separate:
         return logL_coeval, logL_weird
@@ -143,12 +150,12 @@ def logprior(params, IFMR, outliers=False):
     if logg_err < 0:
         return -np.inf
 
-    if Teff_err > 0.10:
-        return -np.inf
-    if logg_err > 0.10:
-        return -np.inf
-    if scale_weird > 10.0:
-        return -np.inf
+    #if Teff_err > 0.10:
+    #    return -np.inf
+    #if logg_err > 0.10:
+    #    return -np.inf
+    #if scale_weird > 10.0:
+    #    return -np.inf
 
     #Mass loss, q must be 0 < q < 1
     if not all(0 < q < 1 for q in IFMR.Mf_Mi):
