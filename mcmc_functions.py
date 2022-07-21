@@ -126,7 +126,7 @@ def loglike_DWD(params, DWD, IFMR, outliers=False):
         log_like = loglike_Mi12(Mi12, DWD.vecMdtau, covMdtau, IFMR)
     log_probs = logprior_Mi12(*Mi12) + log_like
     log_weights = -stats.multivariate_normal.logpdf(Mf12, mean=vecM, cov=covM)
-    jac1, jac2 = IFMR.inv_grad(Mf12).T
+    jac1, jac2 = np.abs(IFMR.inv_grad(Mf12).T)
     integrand = np.exp(log_probs + log_weights) * jac1 * jac2
     I = np.mean(integrand)
 
