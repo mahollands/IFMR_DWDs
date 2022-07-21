@@ -35,6 +35,12 @@ class IFMR_cls(interp1d):
         self.i_grads = np.diff(ifmr_x)/np.diff(ifmr_y)
         self.y_x = ifmr_y/ifmr_x
 
+    def __repr__(self):
+        return "IFMR_cls({}, {})".format(list(self.x), list(self.y))
+
+    def __len__(self):
+        return len(self.x)
+
     def inv_grad(self, Mf):
         """
         The gradient of the inverse IFMR, for a piecewise
