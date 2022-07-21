@@ -5,13 +5,13 @@ import numpy as np
 import emcee
 from IFMR_tools import pairwise
 from mcmc_functions import logpost_DWDs
-from DWD_sets import bad_DWDs_220701 as dont_use_DWDs
+from DWD_sets import bad_DWDs_220714 as dont_use_DWDs
 from DWD_class import load_DWDs
 
 N_CPU = 10
-Nwalkers, Nstep = 1000, 5000
+Nwalkers, Nstep = 100, 300
 f_MCMC_out = "IFMR_MCMC_outliers"
-ifmr_x = np.array([0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 8])
+ifmr_x = np.array([1, 1.5, 2, 2.5, 3, 4, 5, 6, 8])
 #ifmr_x = np.array([0.5, 2, 4, 8])
 
 ###########################################################################
@@ -22,8 +22,8 @@ def run_MCMC(DWDs):
 
     Mf_ranges = np.linspace(0, 1.4, len(ifmr_x)+1)
     pos0 = np.array([
-        np.random.beta(1.0, 1.0, Nwalkers), #P_weird
-        np.random.rayleigh(5.0, Nwalkers), #sig_weird
+        np.random.beta(3.0, 3.0, Nwalkers), #P_weird
+        np.random.rayleigh(1.0, Nwalkers), #sig_weird
         np.random.rayleigh(0.02, Nwalkers), #Teff_err
         np.random.rayleigh(0.02, Nwalkers), #logg_err
     ] + [np.random.uniform(*x01, Nwalkers) for x01 in pairwise(Mf_ranges)]).T
