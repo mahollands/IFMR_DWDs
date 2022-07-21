@@ -5,11 +5,13 @@ from math import log
 import numpy as np
 import numba
 from scipy import stats
+from scipy.special import logsumexp
 from IFMR_tools import IFMR_cls, MSLT
 
 MONOTONIC_IFMR = True
 N_MARGINALISE = 1600
 OUTLIER_DTAU_DIST = "normal" #one of ['normal', 'logit normal', 'uniform', 'beta']
+log_weights_uniform = 2*log(8-0.6)
 
 def get_outlier_dtau_distribution(dist_name):
     """
@@ -112,8 +114,9 @@ def loglike_DWD(params, DWD, IFMR, outliers=False):
     else:
         Teff_err, logg_err = params
     covMdtau = DWD.covMdtau_systematics(Teff_err, logg_err)
+    vecM, covM = DWD.vecMdtau[:2], covMdtau[:2,:2]
 
-    Mi12, Mf12 = IFMR.draw_Mi_samples(DWD.vecMdtau[:2], covMdtau[:2,:2], N_MARGINALISE)
+    Mi12, Mf12 = IFMR.draw_Mi_samples(vecM, covM, N_MARGINALISE)
     if len(Mf12) <= 1:
         return -np.inf
 
@@ -126,10 +129,7 @@ def loglike_DWD(params, DWD, IFMR, outliers=False):
     log_probs = logprior_Mi12(*Mi12) + log_like
     log_weights = -stats.multivariate_normal.logpdf(Mf12, mean=vecM, cov=covM)
     jac1, jac2 = IFMR.inv_grad(Mf12).T
-    integrand = np.exp(log_probs + log_weights) * np.abs(jac1) * np.abs(jac2)
-    I = np.mean(integrand)
-
-    return log(I) if I > 0 and np.isfinite(I) else -np.inf
+    return logsumexp(log_probs+log_weights, b=np.abs(jac1*jac2)) - log(N_MARGINALISE)
 
 def loglike_DWD2(params, DWD, IFMR, outliers=False):
     """
@@ -152,17 +152,13 @@ def loglike_DWD2(params, DWD, IFMR, outliers=False):
     else:
         log_like = loglike_Mi12(Mi12, DWD.vecMdtau, covMdtau, IFMR)
     log_probs = logprior_Mi12(*Mi12) + log_like
-    log_weights = 2*log(8-0.6)
-    integrand = np.exp(log_probs + log_weights)
-    I = np.mean(integrand)
-
-    return log(I) if I > 0 and np.isfinite(I) else -np.inf
+    return logsumexp(log_probs+log_weights_uniform) - log(N_MARGINALISE)
 
 def loglike_DWDs(params, DWDs, IFMR, outliers=False):
     """
     log likelihood for ifmr_y for all DWDs
     """
-    return sum(loglike_DWD2(params, DWD, IFMR, outliers=outliers) for DWD in DWDs)
+    return sum(loglike_DWD(params, DWD, IFMR, outliers=outliers) for DWD in DWDs)
 
 def logprior(params, IFMR, outliers=False):
     """
