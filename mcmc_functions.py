@@ -5,9 +5,9 @@ from math import log
 import numpy as np
 import numba
 from scipy import stats
-from IFMR_tools import IFMR_cls, draw_Mi_samples, MSLT
+from IFMR_tools import IFMR_cls, MSLT
 
-MONOTONIC_IFMR = True
+MONOTONIC_IFMR = False
 N_MARGINALISE = 1600
 OUTLIER_DTAU_DIST = "normal" #one of ['normal', 'logit normal', 'uniform', 'beta']
 
@@ -79,9 +79,15 @@ def loglike_Mi12_outliers(Mi12, vec, cov, IFMR, P_weird, scale_weird, separate=F
     logL_coeval  = loglike_Mi12(*args, outliers=False) + log(1-P_weird)
     logL_weird = loglike_Mi12(*args, outliers=True, scale_weird=scale_weird) + log(P_weird)
 
-    nan_coeval, nan_weird = np.isnan(logL_coeval), np.isnan(logL_weird)
-    logL_coeval[nan_coeval] = -np.inf
-    logL_weird[nan_weird] = -np.inf
+    if isinstance(logL_coeval, np.ndarray):
+        nan_coeval, nan_weird = np.isnan(logL_coeval), np.isnan(logL_weird)
+        logL_coeval[nan_coeval] = -np.inf
+        logL_weird[nan_weird] = -np.inf
+    else:
+        if np.isnan(logL_coeval):
+            logL_coeval = -np.inf
+        if np.isnan(logL_weird):
+            logL_weird = -np.inf
 
     if separate:
         return logL_coeval, logL_weird
@@ -108,7 +114,7 @@ def loglike_DWD(params, DWD, IFMR, outliers=False):
     covMdtau = DWD.covMdtau_systematics(Teff_err, logg_err)
     vecM, covM = DWD.vecMdtau[:2], covMdtau[:2,:2]
 
-    Mi12, Mf12 = draw_Mi_samples(vecM, covM, IFMR, N_MARGINALISE)
+    Mi12, Mf12 = IFMR.draw_Mi_samples(vecM, covM, N_MARGINALISE)
     if len(Mf12) <= 1:
         return -np.inf
 
@@ -150,13 +156,6 @@ def logprior(params, IFMR, outliers=False):
     if logg_err < 0:
         return -np.inf
 
-    #if Teff_err > 0.10:
-    #    return -np.inf
-    #if logg_err > 0.10:
-    #    return -np.inf
-    #if scale_weird > 10.0:
-    #    return -np.inf
-
     #Mass loss, q must be 0 < q < 1
     if not all(0 < q < 1 for q in IFMR.Mf_Mi):
         return -np.inf
@@ -166,15 +165,15 @@ def logprior(params, IFMR, outliers=False):
         return -np.inf
 
     log_priors = [
-        stats.arcsine.logpdf(IFMR.Mf_Mi).sum(),
+        #stats.arcsine.logpdf(IFMR.Mf_Mi).sum(),
         -log(Teff_err),
         -log(logg_err),
     ]
 
     if outliers:
         log_priors += [
-            stats.arcsine.logpdf(P_weird) if outliers else 0,
-            #stats.rayleigh.logpdf(scale_weird, scale=1) if outliers else 0,
+            stats.arcsine.logpdf(P_weird),
+            #stats.rayleigh.logpdf(scale_weird, scale=1),
             -log(scale_weird),
         ]
 
