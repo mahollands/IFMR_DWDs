@@ -126,8 +126,8 @@ def loglike_DWD(params, DWD, IFMR, outliers=False):
         log_like = loglike_Mi12(Mi12, DWD.vecMdtau, covMdtau, IFMR)
     log_probs = logprior_Mi12(*Mi12) + log_like
     log_weights = -stats.multivariate_normal.logpdf(Mf12, mean=vecM, cov=covM)
-    jac1, jac2 = np.abs(IFMR.inv_grad(Mf12).T)
-    integrand = np.exp(log_probs + log_weights) * jac1 * jac2
+    jac1, jac2 = IFMR.inv_grad(Mf12).T
+    integrand = np.exp(log_probs + log_weights) * np.abs(jac1) * np.abs(jac2)
     I = np.mean(integrand)
 
     return log(I) if I > 0 and np.isfinite(I) else -np.inf
@@ -165,7 +165,7 @@ def logprior(params, IFMR, outliers=False):
         return -np.inf
 
     log_priors = [
-        #stats.arcsine.logpdf(IFMR.Mf_Mi).sum(),
+        stats.arcsine.logpdf(IFMR.Mf_Mi).sum(),
         -log(Teff_err),
         -log(logg_err),
     ]
