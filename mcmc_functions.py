@@ -106,7 +106,7 @@ def logprior_Mi12(Mi1, Mi2):
         return -np.inf
     return -2.3*log(Mi1*Mi2) #Kroupa IMF for m>0.5Msun
 
-def loglike_DWD1(params, DWD, IFMR, outliers=False):
+def loglike_DWD(params, DWD, IFMR, outliers=False):
     """
     Marginal distribution :
     P(DWD | theta) = \\iint P(Mi1, Mi2, DWD | theta) dMi1 dMi2
@@ -118,9 +118,14 @@ def loglike_DWD1(params, DWD, IFMR, outliers=False):
     covMdtau = DWD.covMdtau_systematics(Teff_err, logg_err)
     vecM, covM = DWD.vecMdtau[:2], covMdtau[:2,:2]
 
-    Mi12, Mf12 = IFMR.draw_Mi_samples(vecM, covM, N_MARGINALISE)
-    if len(Mf12) <= 1:
-        return -np.inf
+    if DIRECT_MI_INTEGRATION:
+        Mi12 = np.random.uniform(0.6, 8, (2, N_MARGINALISE))
+    else:
+        Mi12, Mf12 = IFMR.draw_Mi_samples(vecM, covM, N_MARGINALISE)
+        if len(Mf12) <= 1:
+            return -np.inf
+        log_weights = -stats.multivariate_normal.logpdf(Mf12, mean=vecM, cov=covM)
+        jac1, jac2 = IFMR.inv_grad(Mf12).T
 
     #importance sampling
     if outliers:
@@ -129,32 +134,10 @@ def loglike_DWD1(params, DWD, IFMR, outliers=False):
     else:
         log_like = loglike_Mi12(Mi12, DWD.vecMdtau, covMdtau, IFMR)
     log_probs = logprior_Mi12(*Mi12) + log_like
-    log_weights = -stats.multivariate_normal.logpdf(Mf12, mean=vecM, cov=covM)
-    jac1, jac2 = IFMR.inv_grad(Mf12).T
+
+    if DIRECT_MI_INTEGRATION:
+        return logsumexp(log_probs+log_weights_uniform) - log(N_MARGINALISE)
     return logsumexp(log_probs+log_weights, b=np.abs(jac1*jac2)) - log(N_MARGINALISE)
-
-def loglike_DWD2(params, DWD, IFMR, outliers=False):
-    """
-    Marginal distribution :
-    P(DWD | theta) = \\iint P(Mi1, Mi2, DWD | theta) dMi1 dMi2
-    uniform integration
-    """
-    if outliers:
-        P_weird, scale_weird, Teff_err, logg_err = params
-    else:
-        Teff_err, logg_err = params
-    covMdtau = DWD.covMdtau_systematics(Teff_err, logg_err)
-
-    Mi12 = np.random.uniform(0.6, 8, (2, N_MARGINALISE))
-
-    #importance sampling
-    if outliers:
-        log_like = loglike_Mi12_mixture(Mi12, DWD.vecMdtau, covMdtau, \
-            IFMR, P_weird, scale_weird)
-    else:
-        log_like = loglike_Mi12(Mi12, DWD.vecMdtau, covMdtau, IFMR)
-    log_probs = logprior_Mi12(*Mi12) + log_like
-    return logsumexp(log_probs+log_weights_uniform) - log(N_MARGINALISE)
 
 def loglike_DWDs(params, DWDs, IFMR, outliers=False):
     """
@@ -236,5 +219,3 @@ def logpost_DWDs(all_params, DWDs, ifmr_x, outliers=False):
     return lp if lp == -np.inf else lp + loglike_DWDs(params, DWDs, IFMR, outliers)
 
 outlier_dtau_dist = get_outlier_dtau_distribution(OUTLIER_DTAU_DIST)
-loglike_DWD = loglike_DWD2 if DIRECT_MI_INTEGRATION else loglike_DWD1
-
