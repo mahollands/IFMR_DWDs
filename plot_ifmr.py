@@ -2,7 +2,7 @@ import pickle
 import numpy as np
 import corner
 import matplotlib.pyplot as plt
-from mcmc_functions import MSLT, loglike_Mi12_outliers
+from mcmc_functions import MSLT, loglike_Mi12_mixture
 from DWD_class import load_DWDs
 from IFMR_tools import IFMR_cls
 
@@ -30,7 +30,8 @@ lnp = np.load(f"MCMC_output/{f_MCMC_out}_lnprob.npy")
 final = chain[:,-1,:]
 
 Nwalkers, Nstep, Ndim = chain.shape
-labels = ["Teff_err", "logg_err"] + [f"y{x}" for x in range(1, len(ifmr_x)+1)]
+labels = ["Teff_err", "logg_err"] \
+    + [f"$y_{{{x}}}$: ${Mi:.1f}\,M_\odot$" for x, Mi in enumerate(ifmr_x, 1)]
 if OUTLIERS:
     labels = ["P_weird", "scale_weird"] + labels
 
@@ -131,7 +132,7 @@ def total_ages_figure(final, DWD):
                 P_i = 0
             else:
                 covMdtau = DWD.covMdtau_systematics(Teff_err, logg_err)
-                logL_coeval, logL_weird = loglike_Mi12_outliers(Mi12, \
+                logL_coeval, logL_weird = loglike_Mi12_mixture(Mi12, \
                     DWD.vecMdtau, covMdtau, IFMR, P_weird, scale_weird, separate=True)
                 logL_tot = np.logaddexp(logL_coeval, logL_weird)
                 P_i = float(np.exp(logL_coeval-logL_tot))
