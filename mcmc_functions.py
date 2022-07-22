@@ -8,17 +8,17 @@ from scipy import stats
 from scipy.special import logsumexp
 from IFMR_tools import IFMR_cls, MSLT
 
-MONOTONIC_IFMR = False
-DIRECT_MI_INTEGRATION = False
+MONOTONIC_IFMR = True
+DIRECT_MI_INTEGRATION = True
 N_MARGINALISE = 1600
 OUTLIER_DTAU_DIST = "normal" #one of ['normal', 'logit normal', 'uniform', 'beta']
+
+if not MONOTONIC_IFMR and not DIRECT_MI_INTEGRATION:
+    raise ValueError("Cannot fit non-monotonic IFMR with integration over Mf")
 
 ##################################
 # constants
 log_weights_uniform = 2*log(8-0.6)
-
-outlier_dtau_dist = get_outlier_dtau_distribution(OUTLIER_DTAU_DIST)
-loglike_DWD = loglike_DWD2 if DIREC_MI_INTEGRATION else loglike_DWD1
 
 def get_outlier_dtau_distribution(dist_name):
     """
@@ -237,3 +237,7 @@ def logpost_DWDs(all_params, DWDs, ifmr_x, outliers=False):
     params, IFMR = setup_params_IFMR(all_params, ifmr_x, outliers)
     lp = logprior(params, IFMR, outliers)
     return lp if lp == -np.inf else lp + loglike_DWDs(params, DWDs, IFMR, outliers)
+
+outlier_dtau_dist = get_outlier_dtau_distribution(OUTLIER_DTAU_DIST)
+loglike_DWD = loglike_DWD2 if DIRECT_MI_INTEGRATION else loglike_DWD1
+
