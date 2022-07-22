@@ -7,8 +7,8 @@ from DWD_class import load_DWDs
 from IFMR_tools import IFMR_cls
 
 BURN = -10
-PLOT_CHAINS = True
-PLOT_CORNER = True
+PLOT_CHAINS = False
+PLOT_CORNER = False
 PLOT_IFMR = True
 PLOT_TOTAL_AGES = True
 OUTLIERS = True
@@ -28,6 +28,8 @@ else:
 chain = np.load(f"MCMC_output/{f_MCMC_out}_chain.npy")
 lnp = np.load(f"MCMC_output/{f_MCMC_out}_lnprob.npy")
 final = chain[:,-1,:]
+best_coords = np.where(lnp == lnp.max())
+best = chain[best_coords[0][0], best_coords[1][0]]
 
 Nwalkers, Nstep, Ndim = chain.shape
 labels = ["Teff_err", "logg_err"] \
@@ -42,7 +44,8 @@ def chain_figure(chain, final, Ndim, Nwalkers):
     plt.figure("chains", figsize=(12, 8))
     for idim, label in enumerate(labels):
         pcs = [np.percentile(final[:,idim], pc) for pc in (16, 50, 84)]
-        print("{} {}_-{}^+{}".format(label, pcs[1], *np.diff(pcs)))
+        args = label, pcs[1], *np.diff(pcs), best[idim]
+        print("{} {:.3f}_-{:.3f}^+{:.3f} {:.3f}".format(*args))
         plt.subplot(5, 3, idim+1)
         for iwalker in range(min(Nwalkers, 1000)):
             plt.plot(chain[iwalker,:,idim], 'k-', alpha=0.05)
@@ -67,6 +70,7 @@ def lnprob_figure(lnp, Nwalkers):
 def IFMR_figure(final):
 
     final_ = final[:,-len(ifmr_x):]
+    best_ = best[-len(ifmr_x):]
 
     plt.figure(figsize=(12, 6))
     plt.subplot(1, 2, 1)
@@ -74,11 +78,10 @@ def IFMR_figure(final):
         plt.axvline(x, c='C3', ls=':', alpha=0.5)
     for ifmr_y in final_:
         plt.plot(ifmr_x, ifmr_y, 'k-', alpha=0.05)
-    plt.plot(ifmr_x, np.percentile(final_, 2.5, axis=0), 'C1-')
-    plt.plot(ifmr_x, np.percentile(final_, 16, axis=0), 'C1-')
-    plt.plot(ifmr_x, np.median(final_, axis=0), 'r-')
-    plt.plot(ifmr_x, np.percentile(final_, 84, axis=0), 'C1-')
-    plt.plot(ifmr_x, np.percentile(final_, 97.5, axis=0), 'C1-')
+    for pc in (2.5, 16, 84, 97.5):
+        plt.plot(ifmr_x, np.percentile(final_, pc, axis=0), 'C1-')
+    plt.plot(ifmr_x, np.median(final_, axis=0), 'r-', lw=1.5)
+    plt.plot(ifmr_x, best_, 'C0', lw=2, ls=':')
     if SIMULATED:
         plt.plot(IFMR_true.x, IFMR_true.y, 'b-')
     plt.plot([0, 8], [0., 8.], 'b:')
@@ -93,11 +96,10 @@ def IFMR_figure(final):
         plt.axvline(x, c='C3', ls=':', alpha=0.5)
     for ifmr_y in final_:
         plt.plot(ifmr_x, ifmr_y/ifmr_x, 'k-', alpha=0.05)
-    plt.plot(ifmr_x, np.percentile(final_, 2.5, axis=0)/ifmr_x, 'C1-')
-    plt.plot(ifmr_x, np.percentile(final_, 16, axis=0)/ifmr_x, 'C1-')
-    plt.plot(ifmr_x, np.median(final_, axis=0)/ifmr_x, 'r-')
-    plt.plot(ifmr_x, np.percentile(final_, 84, axis=0)/ifmr_x, 'C1-')
-    plt.plot(ifmr_x, np.percentile(final_, 97.584, axis=0)/ifmr_x, 'C1-')
+    for pc in (2.5, 16, 84, 97.5):
+        plt.plot(ifmr_x, np.percentile(final_, pc, axis=0)/ifmr_x, 'C1-')
+    plt.plot(ifmr_x, np.median(final_, axis=0)/ifmr_x, 'r-', lw=1.5)
+    plt.plot(ifmr_x, best_/ifmr_x, 'C0', lw=2, ls=':')
     if SIMULATED:
         plt.plot(IFMR_true.x, IFMR_true.Mf_Mi, 'b-')
     plt.xlim(0, 8)
@@ -170,7 +172,8 @@ if __name__ == "__main__":
     if PLOT_CORNER:
         data = chain[:,BURN::1,:]
         data = data.reshape((data.shape[0]*data.shape[1], data.shape[2]))
-        corner.corner(data, smooth1d=True, labels=labels, quantiles=[0.16, 0.50, 0.84])
+        corner.corner(data, smooth1d=True, labels=labels, truths=best, \
+            quantiles=[0.16, 0.50, 0.84])
         plt.savefig("IFMR_corner.png", dpi=200)
         plt.show()
 
