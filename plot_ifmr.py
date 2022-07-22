@@ -6,13 +6,13 @@ from mcmc_functions import MSLT, loglike_Mi12_outliers
 from DWD_class import load_DWDs
 from IFMR_tools import IFMR_cls
 
-BURN = -50
+BURN = -10
 PLOT_CHAINS = True
-PLOT_CORNER = False
+PLOT_CORNER = True
 PLOT_IFMR = True
 PLOT_TOTAL_AGES = True
 OUTLIERS = True
-SIMULATED = True
+SIMULATED = False
 
 if OUTLIERS:
     if SIMULATED:
@@ -40,7 +40,8 @@ if OUTLIERS:
 def chain_figure(chain, final, Ndim, Nwalkers):
     plt.figure("chains", figsize=(12, 8))
     for idim, label in enumerate(labels):
-        print(label, np.median(final[:,idim]), np.std(final[:,idim]))
+        pcs = [np.percentile(final[:,idim], pc) for pc in (16, 50, 84)]
+        print("{} {}_-{}^+{}".format(label, pcs[1], *np.diff(pcs)))
         plt.subplot(5, 3, idim+1)
         for iwalker in range(min(Nwalkers, 1000)):
             plt.plot(chain[iwalker,:,idim], 'k-', alpha=0.05)
@@ -72,9 +73,11 @@ def IFMR_figure(final):
         plt.axvline(x, c='C3', ls=':', alpha=0.5)
     for ifmr_y in final_:
         plt.plot(ifmr_x, ifmr_y, 'k-', alpha=0.05)
+    plt.plot(ifmr_x, np.percentile(final_, 2.5, axis=0), 'C1-')
     plt.plot(ifmr_x, np.percentile(final_, 16, axis=0), 'C1-')
     plt.plot(ifmr_x, np.median(final_, axis=0), 'r-')
     plt.plot(ifmr_x, np.percentile(final_, 84, axis=0), 'C1-')
+    plt.plot(ifmr_x, np.percentile(final_, 97.5, axis=0), 'C1-')
     if SIMULATED:
         plt.plot(IFMR_true.x, IFMR_true.y, 'b-')
     plt.plot([0, 8], [0., 8.], 'b:')
@@ -89,9 +92,11 @@ def IFMR_figure(final):
         plt.axvline(x, c='C3', ls=':', alpha=0.5)
     for ifmr_y in final_:
         plt.plot(ifmr_x, ifmr_y/ifmr_x, 'k-', alpha=0.05)
+    plt.plot(ifmr_x, np.percentile(final_, 2.5, axis=0)/ifmr_x, 'C1-')
     plt.plot(ifmr_x, np.percentile(final_, 16, axis=0)/ifmr_x, 'C1-')
     plt.plot(ifmr_x, np.median(final_, axis=0)/ifmr_x, 'r-')
     plt.plot(ifmr_x, np.percentile(final_, 84, axis=0)/ifmr_x, 'C1-')
+    plt.plot(ifmr_x, np.percentile(final_, 97.584, axis=0)/ifmr_x, 'C1-')
     if SIMULATED:
         plt.plot(IFMR_true.x, IFMR_true.Mf_Mi, 'b-')
     plt.xlim(0, 8)
@@ -116,14 +121,13 @@ def total_ages_figure(final, DWD):
         covMtau = DWD.covMtau_systematics(Teff_err, logg_err)
 
         Mf1, Mf2, tau1, tau2 = np.random.multivariate_normal(DWD.vecMtau, covMtau)
-        if not (ifmr_y[0] < Mf1 < ifmr_y[-1] and ifmr_y[0] < Mf2 < ifmr_y[-1]):
+        if not all(IFMR.y[0] < Mf < IFMR.y[-1] for Mf in (Mf1, Mf2)):
             continue
         Mi1, Mi2 = IFMR.inv([Mf1, Mf2])
-
         Mi12 = np.array([Mi1, Mi2])
 
         if OUTLIERS:
-            if not (0.6 < Mi1 < 8 and 0.6 < Mf2 < 8):
+            if not all(0.6 < Mi < 8 for Mi in (Mi1, Mi2)):
                 P_i = 0
             else:
                 covMdtau = DWD.covMdtau_systematics(Teff_err, logg_err)
@@ -135,12 +139,12 @@ def total_ages_figure(final, DWD):
 
         t1, t2 = MSLT(Mi1), MSLT(Mi2)
         if OUTLIERS:
-            plt.scatter(t1+tau1, t2+tau2, s=1, c=P_i, vmin=0, vmax=1, )
+            plt.scatter(t1+tau1, t2+tau2, s=1, c=P_i, vmin=0, vmax=1)
         else:
             plt.plot(t1+tau1, t2+tau2, 'C0.', ms=1)
 
     P_coeval = np.array(P_coeval)
-    print(DWD.name, np.mean(P_coeval), np.median(P_coeval))
+    print(f"{DWD.name}, {np.mean(P_coeval):.3f}, {np.median(P_coeval):.3f}")
 
     plt.loglog()
     plt.xlim(0.2, 13)
@@ -163,7 +167,7 @@ if __name__ == "__main__":
         #lnprob_figure(lnp, Nwalkers)
 
     if PLOT_CORNER:
-        data = chain[:,BURN::5,:]
+        data = chain[:,BURN::1,:]
         data = data.reshape((data.shape[0]*data.shape[1], data.shape[2]))
         corner.corner(data, smooth1d=True, labels=labels, quantiles=[0.16, 0.50, 0.84])
         plt.savefig("IFMR_corner.png", dpi=200)
