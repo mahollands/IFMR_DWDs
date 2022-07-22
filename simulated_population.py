@@ -9,14 +9,14 @@ from DWD_class import DWDcontainer
 from IFMR_tools import MSLT, IFMR_cls
 
 M_MIN = 1.0 #minimum MS star mass
-TEFF_ERR, LOGG_ERR  = 0.02, 0.03
+TEFF_ERR, LOGG_ERR  = 0.04, 0.03
 TOT_AGE_MAX = 4.0 #Gyr
-ifmr_x_true = np.array([0.5, 2, 4, 8])
-ifmr_y_true = np.array([0.15, 0.6, 0.85, 1.4])
+ifmr_x_true = np.array([0.5, 1, 2, 4, 8])
+ifmr_y_true = np.array([0.15,0.55, 0.65, 0.85, 1.4])
 IFMR_true = IFMR_cls(ifmr_x_true, ifmr_y_true)
 TG_COV = np.diag([20, 20, 0.005, 0.005])
 SIGMA_WEIRD = 5.0
-N_coeval, N_weird = 40, 10
+N_coeval, N_weird = 35, 15
 P_weird_true = N_weird/(N_coeval+N_weird)
 
 def simulated_DWD(outlier=False):
@@ -60,7 +60,7 @@ def simulated_DWD(outlier=False):
     Teff12 *= np.random.normal(1, TEFF_ERR)
     logg12 += np.random.normal(0, LOGG_ERR)
 
-    if not all(5000 < Teff < 25000 for Teff in Teff12):
+    if not all(5000 < Teff < 30000 for Teff in Teff12):
         return None #Teff too cool for H lines or too hot.
 
     Tg_vec = *Teff12, *logg12

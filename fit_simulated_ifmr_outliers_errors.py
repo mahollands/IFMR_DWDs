@@ -8,9 +8,9 @@ from IFMR_tools import pairwise
 from mcmc_functions import logpost_DWDs
 
 N_CPU = 10
-Nwalkers, Nstep = 100, 500
+Nwalkers, Nstep = 100, 300
 f_MCMC_out = "IFMR_MCMC_simulated_outliers"
-ifmr_x = np.array([0.5, 2, 4, 8])
+ifmr_x = np.array([0.5, 1, 2, 4, 8])
 
 ###########################################################################
 # MCMC starts here
