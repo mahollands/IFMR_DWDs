@@ -9,7 +9,7 @@ from scipy.special import logsumexp
 from IFMR_tools import IFMR_cls, MSLT
 
 MONOTONIC_IFMR = True
-DIRECT_MI_INTEGRATION = True
+DIRECT_MI_INTEGRATION = False
 N_MARGINALISE = 1600
 OUTLIER_DTAU_DIST = "normal" #one of ['normal', 'logit normal', 'uniform', 'beta']
 
@@ -70,12 +70,9 @@ def loglike_Mi12(Mi12, vec, cov, IFMR, outliers=False, scale_weird=None):
         ll_Mf12 = stats.multivariate_normal.logpdf(X[:2].T, mean=vec[:2], cov=cov[:2,:2])
         ll_dtau = outlier_dtau_dist(dtau_cool, vec[2], scale_weird)
         return ll_Mf12 + ll_dtau
-    ll = stats.multivariate_normal.logpdf(X.T, mean=vec, cov=cov)
-    #bad = (np.abs(dtau_cool) > 13.8) | np.isnan(ll)
-    #ll[bad] = -np.inf
-    return ll
+    return stats.multivariate_normal.logpdf(X.T, mean=vec, cov=cov)
 
-def loglike_Mi12_outliers(Mi12, vec, cov, IFMR, P_weird, scale_weird, separate=False):
+def loglike_Mi12_mixture(Mi12, vec, cov, IFMR, P_weird, scale_weird, separate=False):
     """
     Computes the likelihood of an IFMR and initial masses for parameters
     of final masses and difference in WD cooling ages and their covariance,
@@ -127,7 +124,7 @@ def loglike_DWD1(params, DWD, IFMR, outliers=False):
 
     #importance sampling
     if outliers:
-        log_like = loglike_Mi12_outliers(Mi12, DWD.vecMdtau, covMdtau, \
+        log_like = loglike_Mi12_mixture(Mi12, DWD.vecMdtau, covMdtau, \
             IFMR, P_weird, scale_weird)
     else:
         log_like = loglike_Mi12(Mi12, DWD.vecMdtau, covMdtau, IFMR)
@@ -152,7 +149,7 @@ def loglike_DWD2(params, DWD, IFMR, outliers=False):
 
     #importance sampling
     if outliers:
-        log_like = loglike_Mi12_outliers(Mi12, DWD.vecMdtau, covMdtau, \
+        log_like = loglike_Mi12_mixture(Mi12, DWD.vecMdtau, covMdtau, \
             IFMR, P_weird, scale_weird)
     else:
         log_like = loglike_Mi12(Mi12, DWD.vecMdtau, covMdtau, IFMR)
