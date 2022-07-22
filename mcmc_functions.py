@@ -8,10 +8,17 @@ from scipy import stats
 from scipy.special import logsumexp
 from IFMR_tools import IFMR_cls, MSLT
 
-MONOTONIC_IFMR = True
+MONOTONIC_IFMR = False
+DIRECT_MI_INTEGRATION = False
 N_MARGINALISE = 1600
 OUTLIER_DTAU_DIST = "normal" #one of ['normal', 'logit normal', 'uniform', 'beta']
+
+##################################
+# constants
 log_weights_uniform = 2*log(8-0.6)
+
+outlier_dtau_dist = get_outlier_dtau_distribution(OUTLIER_DTAU_DIST)
+loglike_DWD = loglike_DWD2 if DIREC_MI_INTEGRATION else loglike_DWD1
 
 def get_outlier_dtau_distribution(dist_name):
     """
@@ -48,8 +55,6 @@ def get_outlier_dtau_distribution(dist_name):
         'beta' : outlier_beta,
     }
     return outlier_dist_options[dist_name]
-
-outlier_dtau_dist = get_outlier_dtau_distribution(OUTLIER_DTAU_DIST)
 
 def loglike_Mi12(Mi12, vec, cov, IFMR, outliers=False, scale_weird=None):
     """
@@ -104,7 +109,7 @@ def logprior_Mi12(Mi1, Mi2):
         return -np.inf
     return -2.3*log(Mi1*Mi2) #Kroupa IMF for m>0.5Msun
 
-def loglike_DWD(params, DWD, IFMR, outliers=False):
+def loglike_DWD1(params, DWD, IFMR, outliers=False):
     """
     Marginal distribution :
     P(DWD | theta) = \\iint P(Mi1, Mi2, DWD | theta) dMi1 dMi2
@@ -188,8 +193,10 @@ def logprior(params, IFMR, outliers=False):
 
     log_priors = [
         #stats.arcsine.logpdf(IFMR.Mf_Mi).sum(),
-        -log(Teff_err),
-        -log(logg_err),
+        #-log(Teff_err),
+        #-log(logg_err),
+        -0.5*((Teff_err-0.03)/0.001)**2,
+        -0.5*((logg_err-0.03)/0.001)**2,
     ]
 
     if outliers:
