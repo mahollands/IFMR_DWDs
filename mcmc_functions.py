@@ -9,6 +9,7 @@ from scipy.special import logsumexp
 from IFMR_tools import IFMR_cls, MSLT
 
 MONOTONIC_IFMR = True
+MONOTONIC_MASS_LOSS = True
 DIRECT_MI_INTEGRATION = False
 N_MARGINALISE = 1600
 OUTLIER_DTAU_DIST = "normal" #one of ['normal', 'logit normal', 'uniform', 'beta']
@@ -168,7 +169,9 @@ def logprior(params, IFMR, outliers=False):
         return -np.inf
 
     #piecewise points in IFMR must be increasing
-    if MONOTONIC_IFMR and not np.allclose(IFMR.y, np.sort(IFMR.y)):
+    if MONOTONIC_IFMR and (not np.allclose(IFMR.y, np.sort(IFMR.y)) \
+    or MONOTONIC_MASS_LOSS and not \
+    np.allclose(IFMR.mass_loss, np.sort(IFMR.mass_loss))):
         return -np.inf
 
     log_priors = [
