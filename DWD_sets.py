@@ -96,3 +96,18 @@ bad_DWDs_220714 = {
     "runD_WDJ1211-4551AB", #B component v. low mass
     "runD_WDJ1557-3832AB", #both component v. low mass
 }
+
+bad_DWDs_220728 = {
+    "runA_WDJ1124-1234AB", #A component has a He atm
+    "runA_WDJ1636+0927AB", #poor fit to magnetic
+    "runA_WDJ1827+0403AB", #B component v. low mass
+    "runB_WDJ1729+2916AB", #B component has a He atm
+    "runC_WDJ0120-1622AB", #terrible flux calibration
+    "runC_WDJ0309+1505AB", #B component is poor fit and V. low mass
+    "runC_WDJ2122+3005AB", #B component v. low mass and A componet has He atm
+    "runD_WDJ1100-1600AB", #A component has a He atm
+    "runD_WDJ1350-5025AB", #A component has a He atm or strongly magnetic
+    "runD_WDJ1211-4551AB", #B component v. low mass
+    "runD_WDJ1557-3832AB", #both component v. low mass
+    "runD_WDJ1929-3000AB", #B component has a He atm
+}
