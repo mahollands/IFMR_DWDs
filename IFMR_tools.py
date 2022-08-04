@@ -31,9 +31,9 @@ class IFMR_cls(interp1d):
     """
     def __init__(self, ifmr_x, ifmr_y):
         super().__init__(ifmr_x, ifmr_y)
-        self.inv = interp1d(ifmr_y, ifmr_x)
-        self.i_grads = np.diff(ifmr_x)/np.diff(ifmr_y)
-        self.y_x = ifmr_y/ifmr_x
+        self.inv = interp1d(self.y, self.x)
+        self.i_grads = np.diff(self.x)/np.diff(self.y)
+        self.y_x = self.y/self.x
 
     def __repr__(self):
         return "IFMR_cls({}, {})".format(list(self.x), list(self.y))
