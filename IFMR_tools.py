@@ -4,6 +4,7 @@ Routines and classes for working with Initial-Final Mass-Relations.
 from itertools import tee
 import numpy as np
 from scipy.interpolate import interp1d
+import matplotlib.pyplot as plt
 
 #MS lifetime from MESA data
 M_init, t_pre = np.loadtxt("MESA_lifetime.dat", unpack=True, skiprows=1)
@@ -89,3 +90,9 @@ class IFMR_cls(interp1d):
         Mf12 = Mf12[ok,:]
         Mi12 = self.inv(Mf12)
         return Mi12.T, Mf12
+
+    def plot(self, *args, **kwargs):
+        """
+        Plot the IFMR
+        """
+        plt.plot(self.x, self.y, *args, **kwargs)  
