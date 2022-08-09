@@ -91,8 +91,9 @@ class IFMR_cls(interp1d):
         Mi12 = self.inv(Mf12)
         return Mi12.T, Mf12
 
-    def plot(self, *args, **kwargs):
+    def plot(self, kind='y', *args, **kwargs):
         """
         Plot the IFMR
         """
-        plt.plot(self.x, self.y, *args, **kwargs)  
+        y_plot = getattr(self, kind)
+        plt.plot(self.x, y_plot, *args, **kwargs)  
