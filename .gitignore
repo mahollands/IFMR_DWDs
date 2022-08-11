@@ -3,3 +3,4 @@
 __pycache__
 stu
 *.sw?
+*.csv
