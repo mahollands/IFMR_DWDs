@@ -9,10 +9,10 @@ from scipy.special import logsumexp
 from IFMR_tools import IFMR_cls, MSLT
 
 MONOTONIC_IFMR = True
-MONOTONIC_MASS_LOSS = True
+MONOTONIC_MASS_LOSS = False
 DIRECT_MI_INTEGRATION = False
 N_MARGINALISE = 1600
-OUTLIER_DTAU_DIST = "normal" #one of ['normal', 'logit normal', 'uniform', 'beta']
+OUTLIER_DTAU_DIST = "normal" #one of {'normal', 'logit normal', 'uniform', 'beta'}
 
 if not MONOTONIC_IFMR and not DIRECT_MI_INTEGRATION:
     raise ValueError("Cannot fit non-monotonic IFMR with integration over Mf")
@@ -32,10 +32,10 @@ def get_outlier_dtau_distribution(dist_name):
     In all cases, arguments are the dtau array, and the distibution scale (this
     has no effect for the uniform distribution, other than simplying the prior).
     """
-    def outlier_norm(dtau, loc, scale):
-        return stats.norm.logpdf(dtau, loc=loc, scale=scale)
+    def outlier_norm(dtau, dtau_var, loc, scale):
+        return stats.norm.logpdf(dtau, loc=loc, scale=np.sqrt(dtau_var+scale**2))
 
-    def outlier_logit_norm(dtau, loc, scale):
+    def outlier_logit_norm(dtau, dtau_var, loc, scale):
         z = 0.5*(dtau/13.8 + 1)
         logit_z = np.log(z/(1-z))
         z_mu = 0.5*(loc/13.8 + 1)
@@ -43,10 +43,10 @@ def get_outlier_dtau_distribution(dist_name):
         return stats.norm.logpdf(logit_z, loc=logit_z_mu, scale=scale) \
             - np.log(2*13.8*z*(1-z))
 
-    def outlier_uniform(dtau, loc, scale):
+    def outlier_uniform(dtau, dtau_var, loc, scale):
         return stats.uniform.logpdf(dtau, loc=loc-scale, scale=2*scale)
 
-    def outlier_beta(dtau, loc, scale):
+    def outlier_beta(dtau, dtau_var, loc, scale):
         return stats.beta.logpdf(dtau, scale, scale, loc=loc-13.8, scale=2*13.8)
 
     outlier_dist_options = {
@@ -69,7 +69,7 @@ def loglike_Mi12(Mi12, vec, cov, IFMR, outliers=False, scale_weird=None):
     X = np.array([Mf1, Mf2, dtau_cool])
     if outliers:
         ll_Mf12 = stats.multivariate_normal.logpdf(X[:2].T, mean=vec[:2], cov=cov[:2,:2])
-        ll_dtau = outlier_dtau_dist(dtau_cool, vec[2], scale_weird)
+        ll_dtau = outlier_dtau_dist(dtau_cool, cov[2,2], vec[2], scale_weird)
         return ll_Mf12 + ll_dtau
     return stats.multivariate_normal.logpdf(X.T, mean=vec, cov=cov)
 
