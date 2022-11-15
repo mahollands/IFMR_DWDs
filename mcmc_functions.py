@@ -171,13 +171,19 @@ def logpost_DWD(all_params, DWD, ifmr_x):
     Test posterior for fitting a single DWD only
     """
     params, IFMR = setup_params_IFMR(all_params, ifmr_x)
-    lp = logprior(params, IFMR)
-    return lp if lp == -np.inf else lp + loglike_DWD(params, DWD, IFMR)
+    if not np.isfinite(lp := logprior(params, IFMR)):
+        return -np.inf
+    if not np.isfinite(ll := loglike_DWD(params, DWD, IFMR))
+        return -np.inf
+    return lp + ll
 
 def logpost_DWDs(all_params, DWDs, ifmr_x, outliers=False):
     """
     Posterior distribution for fitting IFMR to all DWDs
     """
     params, IFMR = setup_params_IFMR(all_params, ifmr_x, outliers)
-    lp = logprior(params, IFMR, outliers)
-    return lp if lp == -np.inf else lp + loglike_DWDs(params, DWDs, IFMR, outliers)
+    if not np.isfinite(lp := logprior(params, IFMR, outliers)):
+        return -np.inf
+    if not np.isfinite(ll := loglike_DWDs(params, DWDs, IFMR, outliers))
+        return -np.inf
+    return lp + ll
