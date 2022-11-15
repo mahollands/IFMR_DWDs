@@ -47,6 +47,20 @@ class DWDcontainer:
         Tg_cov_ = self.get_Tg_cov_systematics(Teff_err, logg_err)
         return self.JacMtau @ Tg_cov_ @ self.JacMtau.T
 
+    def Mdtau_samples(self, Teff_err, logg_err, N_samples=1):
+        """
+        Draw M1 M2 dtau samples given Teff/logg systematic errors
+        """
+        covMdtau = self.covMdtau_systematics(Teff_err, logg_err)
+        return np.random.multivariate_normal(self.vecMdtau, covMdtau, (3, N_samples))
+
+    def Mtau_samples(self, Teff_err, logg_err, N_samples=1):
+        """
+        Draw M1 M2 tau1 tau2 samples given Teff/logg systematic errors
+        """
+        covMtau = self.covMtau_systematics(Teff_err, logg_err)
+        return np.random.multivariate_normal(self.vecMtau, covMtau, (4, N_samples))
+
 def Taylor_Expand_WD(T, g, dT=10, dg=0.001, thickness='thick'):
     """
     Pre-compute Taylor-Expansions for Masses and ages
