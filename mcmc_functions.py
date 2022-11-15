@@ -12,7 +12,6 @@ MONOTONIC_IFMR = True
 MONOTONIC_MASS_LOSS = False
 DIRECT_MI_INTEGRATION = False
 N_MARGINALISE = 1600
-OUTLIER_DTAU_DIST = "normal" #one of {'normal', 'logit normal', 'uniform', 'beta'}
 
 if not MONOTONIC_IFMR and not DIRECT_MI_INTEGRATION:
     raise ValueError("Cannot fit non-monotonic IFMR with integration over Mf")
@@ -20,42 +19,6 @@ if not MONOTONIC_IFMR and not DIRECT_MI_INTEGRATION:
 ##################################
 # constants
 log_weights_uniform = 2*log(8-0.6)
-
-def get_outlier_dtau_distribution(dist_name):
-    """
-    Choice of distributions for dtau when considering outliers. Valid choices
-    are:
-        - "normal"
-        - "logit-normal"
-        - "uniform"
-        - "beta"
-    In all cases, arguments are the dtau array, and the distibution scale (this
-    has no effect for the uniform distribution, other than simplying the prior).
-    """
-    def outlier_norm(dtau, dtau_var, loc, scale):
-        return stats.norm.logpdf(dtau, loc=loc, scale=np.sqrt(dtau_var+scale**2))
-
-    def outlier_logit_norm(dtau, dtau_var, loc, scale):
-        z = 0.5*(dtau/13.8 + 1)
-        logit_z = np.log(z/(1-z))
-        z_mu = 0.5*(loc/13.8 + 1)
-        logit_z_mu = np.log(z_mu/(1-z_mu))
-        return stats.norm.logpdf(logit_z, loc=logit_z_mu, scale=scale) \
-            - np.log(2*13.8*z*(1-z))
-
-    def outlier_uniform(dtau, dtau_var, loc, scale):
-        return stats.uniform.logpdf(dtau, loc=loc-scale, scale=2*scale)
-
-    def outlier_beta(dtau, dtau_var, loc, scale):
-        return stats.beta.logpdf(dtau, scale, scale, loc=loc-13.8, scale=2*13.8)
-
-    outlier_dist_options = {
-        'normal' : outlier_norm,
-        'logit normal' : outlier_logit_norm,
-        'uniform' : outlier_uniform,
-        'beta' : outlier_beta,
-    }
-    return outlier_dist_options[dist_name]
 
 def loglike_Mi12(Mi12, vec, cov, IFMR, outliers=False, scale_weird=None):
     """
@@ -68,9 +31,7 @@ def loglike_Mi12(Mi12, vec, cov, IFMR, outliers=False, scale_weird=None):
     Mf1, Mf2 = IFMR(Mi12)
     X = np.array([Mf1, Mf2, dtau_cool])
     if outliers:
-        ll_Mf12 = stats.multivariate_normal.logpdf(X[:2].T, mean=vec[:2], cov=cov[:2,:2])
-        ll_dtau = outlier_dtau_dist(dtau_cool, cov[2,2], vec[2], scale_weird)
-        return ll_Mf12 + ll_dtau
+        cov[2,2] += scale_weird**2
     return stats.multivariate_normal.logpdf(X.T, mean=vec, cov=cov)
 
 def loglike_Mi12_mixture(Mi12, vec, cov, IFMR, P_weird, scale_weird, separate=False):
@@ -220,5 +181,3 @@ def logpost_DWDs(all_params, DWDs, ifmr_x, outliers=False):
     params, IFMR = setup_params_IFMR(all_params, ifmr_x, outliers)
     lp = logprior(params, IFMR, outliers)
     return lp if lp == -np.inf else lp + loglike_DWDs(params, DWDs, IFMR, outliers)
-
-outlier_dtau_dist = get_outlier_dtau_distribution(OUTLIER_DTAU_DIST)
