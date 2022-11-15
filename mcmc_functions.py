@@ -10,6 +10,7 @@ from IFMR_tools import IFMR_cls, MSLT
 
 MONOTONIC_IFMR = True
 MONOTONIC_MASS_LOSS = False
+MCH_LIMIT = False
 DIRECT_MI_INTEGRATION = False
 N_MARGINALISE = 1600
 
@@ -31,8 +32,11 @@ def loglike_Mi12(Mi12, vec, cov, IFMR, outliers=False, scale_weird=None):
     Mf1, Mf2 = IFMR(Mi12)
     X = np.array([Mf1, Mf2, dtau_cool])
     if outliers:
-        cov[2,2] += scale_weird**2
-    return stats.multivariate_normal.logpdf(X.T, mean=vec, cov=cov)
+        cov_ = np.copy(cov)
+        cov_[2,2] += scale_weird**2
+    else:
+        cov_ = cov
+    return stats.multivariate_normal.logpdf(X.T, mean=vec, cov=cov_)
 
 def loglike_Mi12_mixture(Mi12, vec, cov, IFMR, P_weird, scale_weird, separate=False):
     """
@@ -130,9 +134,12 @@ def logprior(params, IFMR, outliers=False):
         return -np.inf
 
     #piecewise points in IFMR must be increasing
-    if MONOTONIC_IFMR and (not np.allclose(IFMR.y, np.sort(IFMR.y)) \
-    or MONOTONIC_MASS_LOSS and not \
-    np.allclose(IFMR.mass_loss, np.sort(IFMR.mass_loss))):
+    ifmr_sorted = np.allclose(IFMR.y, np.sort(IFMR.y))
+    mass_loss_sorted  = np.allclose(IFMR.mass_loss, np.sort(IFMR.mass_loss))
+    if MONOTONIC_IFMR and (not ifmr_sorted or MONOTONIC_MASS_LOSS \
+    and not mass_loss_sorted):
+        return -np.inf
+    if MCH_PRIOR and np.any(IFMR.y > 1.4):
         return -np.inf
 
     log_priors = [
@@ -173,7 +180,7 @@ def logpost_DWD(all_params, DWD, ifmr_x):
     params, IFMR = setup_params_IFMR(all_params, ifmr_x)
     if not np.isfinite(lp := logprior(params, IFMR)):
         return -np.inf
-    if not np.isfinite(ll := loglike_DWD(params, DWD, IFMR))
+    if not np.isfinite(ll := loglike_DWD(params, DWD, IFMR)):
         return -np.inf
     return lp + ll
 
@@ -184,6 +191,6 @@ def logpost_DWDs(all_params, DWDs, ifmr_x, outliers=False):
     params, IFMR = setup_params_IFMR(all_params, ifmr_x, outliers)
     if not np.isfinite(lp := logprior(params, IFMR, outliers)):
         return -np.inf
-    if not np.isfinite(ll := loglike_DWDs(params, DWDs, IFMR, outliers))
+    if not np.isfinite(ll := loglike_DWDs(params, DWDs, IFMR, outliers)):
         return -np.inf
     return lp + ll
