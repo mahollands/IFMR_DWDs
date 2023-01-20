@@ -52,6 +52,8 @@ class DWDcontainer:
         Draw M1 M2 dtau samples given Teff/logg systematic errors
         """
         covMdtau = self.covMdtau_systematics(Teff_err, logg_err)
+        if N_samples == 1:
+            return np.random.multivariate_normal(self.vecMdtau, covMdtau)
         return np.random.multivariate_normal(self.vecMdtau, covMdtau, (3, N_samples))
 
     def Mtau_samples(self, Teff_err, logg_err, N_samples=1):
@@ -59,6 +61,8 @@ class DWDcontainer:
         Draw M1 M2 tau1 tau2 samples given Teff/logg systematic errors
         """
         covMtau = self.covMtau_systematics(Teff_err, logg_err)
+        if N_samples == 1:
+            return np.random.multivariate_normal(self.vecMtau, covMtau)
         return np.random.multivariate_normal(self.vecMtau, covMtau, (4, N_samples))
 
 def Taylor_Expand_WD(T, g, dT=10, dg=0.001, thickness='thick'):
