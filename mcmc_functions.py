@@ -8,10 +8,11 @@ from scipy import stats
 from scipy.special import logsumexp
 from IFMR_tools import IFMR_cls, MSLT
 
-MONOTONIC_IFMR = True
+MONOTONIC_IFMR = False
 MONOTONIC_MASS_LOSS = False
-MCH_LIMIT = False
-DIRECT_MI_INTEGRATION = False
+MCH_PRIOR = False
+STRICT_MASS_LOSS = False
+DIRECT_MI_INTEGRATION = True
 N_MARGINALISE = 1600
 
 if not MONOTONIC_IFMR and not DIRECT_MI_INTEGRATION:
@@ -111,9 +112,32 @@ def loglike_DWDs(params, DWDs, IFMR, outliers=False):
     """
     return sum(loglike_DWD(params, DWD, IFMR, outliers=outliers) for DWD in DWDs)
 
-def logprior(params, IFMR, outliers=False):
+def logprior_IFMR(IFMR):
     """
-    priors on IFMR all ifmr parameters
+    Prior on the IFMR only
+    """
+    if STRICT_MASS_LOSS and not all(0 < q < 1 for q in IFMR.Mf_Mi):
+        return -np.inf
+
+    ifmr_sorted = np.allclose(IFMR.y, np.sort(IFMR.y))
+    mass_loss_sorted  = np.allclose(IFMR.mass_loss, np.sort(IFMR.mass_loss))
+    #piecewise points in IFMR must be increasing
+    if MONOTONIC_IFMR and (not ifmr_sorted \
+    or MONOTONIC_MASS_LOSS and not mass_loss_sorted) \
+    or MCH_PRIOR and np.any(IFMR.y > 1.4):
+        return -np.inf
+
+    return 0
+    
+def logprior_DWD(Mi12, IFMR):
+    """
+    prior for only one DWD
+    """
+    return logprior_Mi12(*Mi12) + logprior_IFMR(IFMR)
+
+def logprior_DWDs(params, IFMR, outliers=False):
+    """
+    priors on IFMR all and ifmr related parameters
     """
     if outliers:
         P_weird, scale_weird, Teff_err, logg_err = params
@@ -129,42 +153,32 @@ def logprior(params, IFMR, outliers=False):
     if logg_err < 0:
         return -np.inf
 
-    #Mass loss, q must be 0 < q < 1
-    if not all(0 < q < 1 for q in IFMR.Mf_Mi):
-        return -np.inf
-
-    #piecewise points in IFMR must be increasing
-    ifmr_sorted = np.allclose(IFMR.y, np.sort(IFMR.y))
-    mass_loss_sorted  = np.allclose(IFMR.mass_loss, np.sort(IFMR.mass_loss))
-    if MONOTONIC_IFMR and (not ifmr_sorted or MONOTONIC_MASS_LOSS \
-    and not mass_loss_sorted):
-        return -np.inf
-    if MCH_PRIOR and np.any(IFMR.y > 1.4):
-        return -np.inf
-
     log_priors = [
         #stats.arcsine.logpdf(IFMR.Mf_Mi).sum(),
-        #-log(Teff_err),
-        #-log(logg_err),
-        -0.5*((Teff_err-0.03)/0.001)**2,
-        -0.5*((logg_err-0.03)/0.001)**2,
+        -log(Teff_err),
+        -log(logg_err),
+        #-0.5*((Teff_err-0.05)/0.001)**2,
+        #-0.5*((logg_err-0.05)/0.001)**2,
     ]
 
     if outliers:
         log_priors += [
             stats.arcsine.logpdf(P_weird),
             #stats.rayleigh.logpdf(scale_weird, scale=1),
-            -log(scale_weird),
+            #-log(scale_weird),
         ]
 
-    return sum(log_priors)
+    return sum(log_priors) + logprior_IFMR(IFMR)
 
-def setup_params_IFMR(all_params, ifmr_x, outliers=False):
+def setup_params_IFMR(all_params, ifmr_x, outliers=False, single=False):
     """
     Takes a full set of parameters, and removes those corresponding
     to IFMR y-values, instead returning a reduced set of parameters
     and an IFMR object.
     """
+    if single:
+        Mi1, Mi2, *ifmr_y = all_params
+        params = Mi1, Mi2
     if outliers:
         P_weird, scale_weird, Teff_err, logg_err, *ifmr_y = all_params
         params = P_weird, scale_weird, Teff_err, logg_err
@@ -177,10 +191,11 @@ def logpost_DWD(all_params, DWD, ifmr_x):
     """
     Test posterior for fitting a single DWD only
     """
-    params, IFMR = setup_params_IFMR(all_params, ifmr_x)
-    if not np.isfinite(lp := logprior(params, IFMR)):
+    Mi12, IFMR = setup_params_IFMR(all_params, ifmr_x)
+    covMdtau = DWD.covMdtau_systematics(0.01, 0.01)
+    if not np.isfinite(lp := logprior_DWD(Mi12, IFMR)):
         return -np.inf
-    if not np.isfinite(ll := loglike_DWD(params, DWD, IFMR)):
+    if not np.isfinite(ll := loglike_Mi12(Mi12, DWD.vecMdtau, covMdtau, IFMR)):
         return -np.inf
     return lp + ll
 
@@ -189,7 +204,7 @@ def logpost_DWDs(all_params, DWDs, ifmr_x, outliers=False):
     Posterior distribution for fitting IFMR to all DWDs
     """
     params, IFMR = setup_params_IFMR(all_params, ifmr_x, outliers)
-    if not np.isfinite(lp := logprior(params, IFMR, outliers)):
+    if not np.isfinite(lp := logprior_DWDs(params, IFMR, outliers)):
         return -np.inf
     if not np.isfinite(ll := loglike_DWDs(params, DWDs, IFMR, outliers)):
         return -np.inf
