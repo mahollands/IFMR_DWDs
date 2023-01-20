@@ -4,3 +4,7 @@ __pycache__
 stu
 *.sw?
 *.csv
+noddy_ifmr.py
+plot2.py
+plot_ifmr_dwd.py
+plot_ifmr_talk.py
