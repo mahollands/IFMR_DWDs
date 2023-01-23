@@ -117,13 +117,16 @@ def logprior_IFMR(IFMR):
     if STRICT_MASS_LOSS and not all(0 < q < 1 for q in IFMR.Mf_Mi):
         return -np.inf
 
+    if MCH_PRIOR and np.any(IFMR.y > 1.4):
+        return -np.inf
+
     ifmr_sorted = np.allclose(IFMR.y, np.sort(IFMR.y))
     mass_loss_sorted  = np.allclose(IFMR.mass_loss, np.sort(IFMR.mass_loss))
-    #piecewise points in IFMR must be increasing
-    if MONOTONIC_IFMR and (not ifmr_sorted \
-    or MONOTONIC_MASS_LOSS and not mass_loss_sorted) \
-    or MCH_PRIOR and np.any(IFMR.y > 1.4):
-        return -np.inf
+    if MONOTONIC_IFMR:
+        if not ifmr_sorted:
+            return -np.inf
+        if MONOTONIC_MASS_LOSS and not mass_loss_sorted:
+            return -np.inf
 
     return 0
     
