@@ -1,7 +1,7 @@
 """
 MCMC routines for IFMR fitting with DWD binaries
 """
-from math import log
+from math import log, log1p
 import numpy as np
 import numba
 from scipy import stats
@@ -45,7 +45,7 @@ def loglike_Mi12_mixture(Mi12, vec, cov, IFMR, P_weird, scale_weird, separate=Fa
     from an alternative distribution.
     """
     args = Mi12, vec, cov, IFMR
-    logL_coeval  = loglike_Mi12(*args, outliers=False) + log(1-P_weird)
+    logL_coeval  = loglike_Mi12(*args, outliers=False) + log1p(P_weird)
     logL_weird = loglike_Mi12(*args, outliers=True, scale_weird=scale_weird) + log(P_weird)
 
     if isinstance(logL_coeval, np.ndarray):
