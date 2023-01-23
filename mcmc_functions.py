@@ -2,6 +2,7 @@
 MCMC routines for IFMR fitting with DWD binaries
 """
 from math import log, log1p
+from functools import partial
 import numpy as np
 import numba
 from scipy import stats
@@ -79,8 +80,11 @@ def loglike_DWD(params, DWD, IFMR, outliers=False):
     """
     if outliers:
         P_weird, scale_weird, Teff_err, logg_err = params
+        loglike_Mi12_fun = partial(loglike_Mi12_mixture, \
+            P_weird=P_weird, scale_weird=scale_weird)
     else:
         Teff_err, logg_err = params
+        loglike_Mi12_fun = loglike_Mi12
     covMdtau = DWD.covMdtau_systematics(Teff_err, logg_err)
     vecM, covM = DWD.vecMdtau[:2], covMdtau[:2,:2]
 
@@ -96,12 +100,9 @@ def loglike_DWD(params, DWD, IFMR, outliers=False):
         jac1, jac2 = IFMR.inv_grad(Mf12).T
 
     #importance sampling
-    log_like = \
-    loglike_Mi12_mixture(Mi12, DWD.vecMdtau, covMdtau, IFMR, P_weird, scale_weird) \
-    if outliers else loglike_Mi12(Mi12, DWD.vecMdtau, covMdtau, IFMR)
-
-    log_probs = logprior_Mi12(*Mi12) + log_like + log_weights
-    return logsumexp(log_probs, b=np.abs(jac1*jac2)) - log(N_MARGINALISE)
+    log_like = loglike_Mi12_fun(Mi12, DWD.vecMdtau, covMdtau, IFMR)
+    log_integrand = logprior_Mi12(*Mi12) + log_like + log_weights
+    return logsumexp(log_integrand, b=np.abs(jac1*jac2)) - log(N_MARGINALISE)
 
 def loglike_DWDs(params, DWDs, IFMR, outliers=False):
     """
@@ -138,30 +139,19 @@ def logprior_DWDs(params, IFMR, outliers=False):
     """
     if outliers:
         P_weird, scale_weird, Teff_err, logg_err = params
-        if not 0 < P_weird < 1:
-            return -np.inf
-        if not 0 < scale_weird < 13.8:
+        if not 0 < P_weird < 1 or not 0 < scale_weird < 13.8:
             return -np.inf
     else:
         Teff_err, logg_err = params
 
-    if Teff_err < 0:
-        return -np.inf
-    if logg_err < 0:
+    if Teff_err < 0 or logg_err < 0:
         return -np.inf
 
     log_priors = [
-        #stats.arcsine.logpdf(IFMR.Mf_Mi).sum(),
         -log(Teff_err),
         -log(logg_err),
-        #-0.5*((Teff_err-0.05)/0.001)**2,
-        #-0.5*((logg_err-0.05)/0.001)**2,
     ]
 
-    #if outliers:
-    #    log_priors += [
-    #        stats.arcsine.logpdf(P_weird),
-    #    ]
     return sum(log_priors) + logprior_IFMR(IFMR)
 
 def setup_params_IFMR(all_params, ifmr_x, outliers=False, single=False):
