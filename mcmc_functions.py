@@ -8,12 +8,12 @@ from scipy import stats
 from scipy.special import logsumexp
 from IFMR_tools import IFMR_cls, MSLT
 
-MONOTONIC_IFMR = False
+MONOTONIC_IFMR = True
 MONOTONIC_MASS_LOSS = False
 MCH_PRIOR = False
-STRICT_MASS_LOSS = False
-DIRECT_MI_INTEGRATION = True
-N_MARGINALISE = 1600
+STRICT_MASS_LOSS = True
+DIRECT_MI_INTEGRATION = False
+N_MARGINALISE = 10000
 
 if not MONOTONIC_IFMR and not DIRECT_MI_INTEGRATION:
     raise ValueError("Cannot fit non-monotonic IFMR with integration over Mf")
@@ -32,11 +32,9 @@ def loglike_Mi12(Mi12, vec, cov, IFMR, outliers=False, scale_weird=None):
     dtau_cool = tau2_ms-tau1_ms
     Mf1, Mf2 = IFMR(Mi12)
     X = np.array([Mf1, Mf2, dtau_cool])
+    cov_ = np.copy(cov)
     if outliers:
-        cov_ = np.copy(cov)
         cov_[2,2] += scale_weird**2
-    else:
-        cov_ = cov
     return stats.multivariate_normal.logpdf(X.T, mean=vec, cov=cov_)
 
 def loglike_Mi12_mixture(Mi12, vec, cov, IFMR, P_weird, scale_weird, separate=False):
@@ -143,7 +141,7 @@ def logprior_DWDs(params, IFMR, outliers=False):
         P_weird, scale_weird, Teff_err, logg_err = params
         if not 0 < P_weird < 1:
             return -np.inf
-        if scale_weird < 0:
+        if not 0 < scale_weird < 13.8:
             return -np.inf
     else:
         Teff_err, logg_err = params
@@ -161,13 +159,10 @@ def logprior_DWDs(params, IFMR, outliers=False):
         #-0.5*((logg_err-0.05)/0.001)**2,
     ]
 
-    if outliers:
-        log_priors += [
-            stats.arcsine.logpdf(P_weird),
-            #stats.rayleigh.logpdf(scale_weird, scale=1),
-            #-log(scale_weird),
-        ]
-
+    #if outliers:
+    #    log_priors += [
+    #        stats.arcsine.logpdf(P_weird),
+    #    ]
     return sum(log_priors) + logprior_IFMR(IFMR)
 
 def setup_params_IFMR(all_params, ifmr_x, outliers=False, single=False):
