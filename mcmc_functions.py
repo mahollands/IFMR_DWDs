@@ -45,19 +45,20 @@ def loglike_Mi12_mixture(Mi12, vec, cov, IFMR, P_weird, scale_weird, separate=Fa
     from an alternative distribution.
     """
     args = Mi12, vec, cov, IFMR
-    logL_coeval  = loglike_Mi12(*args, outliers=False) + log1p(P_weird)
-    logL_weird = loglike_Mi12(*args, outliers=True, scale_weird=scale_weird) + log(P_weird)
+    logL_coeval  = loglike_Mi12(*args, outliers=False)
+    logL_weird = loglike_Mi12(*args, outliers=True, scale_weird=scale_weird)
 
     if isinstance(logL_coeval, np.ndarray):
-        nan_coeval, nan_weird = np.isnan(logL_coeval), np.isnan(logL_weird)
-        logL_coeval[nan_coeval] = -np.inf
-        logL_weird[nan_weird] = -np.inf
+        logL_coeval[np.isnan(logL_coeval)] = -np.inf
+        logL_weird[np.isnan(logL_weird)] = -np.inf
     else:
         if np.isnan(logL_coeval):
             logL_coeval = -np.inf
         if np.isnan(logL_weird):
             logL_weird = -np.inf
 
+    logL_coeval += log1p(-P_weird) 
+    logL_weird += log(P_weird)
     if separate:
         return logL_coeval, logL_weird
     return np.logaddexp(logL_coeval, logL_weird)
@@ -85,6 +86,8 @@ def loglike_DWD(params, DWD, IFMR, outliers=False):
 
     if DIRECT_MI_INTEGRATION:
         Mi12 = np.random.uniform(0.6, 8, (2, N_MARGINALISE))
+        log_weights = log_weights_uniform
+        jac1, jac2 = 1, 1
     else:
         Mi12, Mf12 = IFMR.draw_Mi_samples(vecM, covM, N_MARGINALISE)
         if len(Mf12) <= 1:
@@ -93,16 +96,12 @@ def loglike_DWD(params, DWD, IFMR, outliers=False):
         jac1, jac2 = IFMR.inv_grad(Mf12).T
 
     #importance sampling
-    if outliers:
-        log_like = loglike_Mi12_mixture(Mi12, DWD.vecMdtau, covMdtau, \
-            IFMR, P_weird, scale_weird)
-    else:
-        log_like = loglike_Mi12(Mi12, DWD.vecMdtau, covMdtau, IFMR)
-    log_probs = logprior_Mi12(*Mi12) + log_like
+    log_like = \
+    loglike_Mi12_mixture(Mi12, DWD.vecMdtau, covMdtau, IFMR, P_weird, scale_weird) \
+    if outliers else loglike_Mi12(Mi12, DWD.vecMdtau, covMdtau, IFMR)
 
-    if DIRECT_MI_INTEGRATION:
-        return logsumexp(log_probs+log_weights_uniform) - log(N_MARGINALISE)
-    return logsumexp(log_probs+log_weights, b=np.abs(jac1*jac2)) - log(N_MARGINALISE)
+    log_probs = logprior_Mi12(*Mi12) + log_like + log_weights
+    return logsumexp(log_probs, b=np.abs(jac1*jac2)) - log(N_MARGINALISE)
 
 def loglike_DWDs(params, DWDs, IFMR, outliers=False):
     """
