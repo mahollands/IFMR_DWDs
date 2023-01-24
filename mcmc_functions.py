@@ -30,9 +30,9 @@ def loglike_Mi12(Mi12, vec, cov, IFMR, outliers=False, scale_weird=None):
     This is optionally computed for either the coeval or outlier distributions.
     """
     tau1_ms, tau2_ms = MSLT(Mi12)
-    dtau_cool = tau2_ms-tau1_ms
+    dtau_cool = tau1_ms-tau2_ms
     Mf1, Mf2 = IFMR(Mi12)
-    X = np.array([Mf1, Mf2, dtau_cool])
+    X = np.array([Mf1, Mf2, -dtau_cool])
     cov_ = np.copy(cov)
     if outliers:
         cov_[2,2] += scale_weird**2
@@ -58,7 +58,7 @@ def loglike_Mi12_mixture(Mi12, vec, cov, IFMR, P_weird, scale_weird, separate=Fa
         if np.isnan(logL_weird):
             logL_weird = -np.inf
 
-    logL_coeval += log1p(-P_weird) 
+    logL_coeval += log1p(-P_weird)
     logL_weird += log(P_weird)
     if separate:
         return logL_coeval, logL_weird
@@ -80,11 +80,11 @@ def loglike_DWD(params, DWD, IFMR, outliers=False):
     """
     if outliers:
         P_weird, scale_weird, Teff_err, logg_err = params
-        loglike_Mi12_fun = partial(loglike_Mi12_mixture, \
+        loglike_Mi12_ = partial(loglike_Mi12_mixture, \
             P_weird=P_weird, scale_weird=scale_weird)
     else:
         Teff_err, logg_err = params
-        loglike_Mi12_fun = loglike_Mi12
+        loglike_Mi12_ = loglike_Mi12
     covMdtau = DWD.covMdtau_systematics(Teff_err, logg_err)
     vecM, covM = DWD.vecMdtau[:2], covMdtau[:2,:2]
 
@@ -100,7 +100,7 @@ def loglike_DWD(params, DWD, IFMR, outliers=False):
         jac1, jac2 = IFMR.inv_grad(Mf12).T
 
     #importance sampling
-    log_like = loglike_Mi12_fun(Mi12, DWD.vecMdtau, covMdtau, IFMR)
+    log_like = loglike_Mi12_(Mi12, DWD.vecMdtau, covMdtau, IFMR)
     log_integrand = logprior_Mi12(*Mi12) + log_like + log_weights
     return logsumexp(log_integrand, b=np.abs(jac1*jac2)) - log(N_MARGINALISE)
 
@@ -129,7 +129,7 @@ def logprior_IFMR(IFMR):
             return -np.inf
 
     return 0
-    
+
 def logprior_DWD(Mi12, IFMR):
     """
     prior for only one DWD
