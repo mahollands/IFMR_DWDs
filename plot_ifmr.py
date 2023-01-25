@@ -7,8 +7,8 @@ from DWD_class import load_DWDs
 from IFMR_tools import IFMR_cls
 
 BURN = -10
-PLOT_CHAINS = False
-PLOT_CORNER = False
+PLOT_CHAINS = True
+PLOT_CORNER = True
 PLOT_IFMR = True
 PLOT_TOTAL_AGES = True
 OUTLIERS = True
@@ -46,7 +46,7 @@ def chain_figure(chain, final, Ndim, Nwalkers):
         pcs = [np.percentile(final[:,idim], pc) for pc in (16, 50, 84)]
         args = label, pcs[1], *np.diff(pcs), best[idim]
         print("{} {:.3f}_-{:.3f}^+{:.3f} {:.3f}".format(*args))
-        plt.subplot(5, 3, idim+1)
+        plt.subplot(5, 4, idim+1)
         for iwalker in range(min(Nwalkers, 1000)):
             plt.plot(chain[iwalker,:,idim], 'k-', alpha=0.05)
         plt.plot(np.median(chain[:,:,idim], axis=0), 'r-')
@@ -81,7 +81,7 @@ def IFMR_figure(final):
     for pc in (2.5, 16, 84, 97.5):
         plt.plot(ifmr_x, np.percentile(final_, pc, axis=0), 'C1-')
     plt.plot(ifmr_x, np.median(final_, axis=0), 'r-', lw=1.5)
-    plt.plot(ifmr_x, best_, 'C0', lw=2, ls=':')
+    plt.plot(ifmr_x, best_, '#00FF00', lw=2, ls=':')
     if SIMULATED:
         plt.plot(IFMR_true.x, IFMR_true.y, 'b-')
     plt.plot([0, 8], [0., 8.], 'b:')
@@ -99,7 +99,7 @@ def IFMR_figure(final):
     for pc in (2.5, 16, 84, 97.5):
         plt.plot(ifmr_x, np.percentile(final_, pc, axis=0)/ifmr_x, 'C1-')
     plt.plot(ifmr_x, np.median(final_, axis=0)/ifmr_x, 'r-', lw=1.5)
-    plt.plot(ifmr_x, best_/ifmr_x, 'C0', lw=2, ls=':')
+    plt.plot(ifmr_x, best_/ifmr_x, '#00FF00', lw=2, ls=':')
     if SIMULATED:
         plt.plot(IFMR_true.x, IFMR_true.Mf_Mi, 'b-')
     plt.xlim(0, 8)
@@ -121,9 +121,7 @@ def total_ages_figure(final, DWD):
         else:
             Teff_err, logg_err, *ifmr_y = params
         IFMR = IFMR_cls(ifmr_x, ifmr_y)
-        covMtau = DWD.covMtau_systematics(Teff_err, logg_err)
-
-        Mf1, Mf2, tau1, tau2 = np.random.multivariate_normal(DWD.vecMtau, covMtau)
+        Mf1, Mf2, tau1, tau2 = DWD.Mtau_samples(Teff_err, logg_err)
         if not all(IFMR.y[0] < Mf < IFMR.y[-1] for Mf in (Mf1, Mf2)):
             continue
         Mi1, Mi2 = IFMR.inv([Mf1, Mf2])
