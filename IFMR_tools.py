@@ -9,13 +9,13 @@ import matplotlib.pyplot as plt
 #MS lifetime from MESA data
 M_init, t_pre = np.loadtxt("MESA_lifetime.dat", unpack=True, skiprows=1)
 t_pre /= 1e9 #to Gyr
-log_tau_fun = interp1d(M_init, np.log10(t_pre), kind='cubic', bounds_error=False)
+log_tau_fun = interp1d(np.log(M_init), np.log(t_pre), kind='linear', bounds_error=False)
 
 def MSLT(Mi):
     """
     Main sequence lifetime (Gyr) for an initial mass (Msun).
     """
-    return 10**log_tau_fun(Mi)
+    return np.exp(log_tau_fun(np.log(Mi)))
 
 def pairwise(iterable):
     """
