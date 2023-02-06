@@ -3,7 +3,7 @@ os.environ["OMP_NUM_THREADS"] = "1"
 from multiprocessing import Pool
 import numpy as np
 import emcee
-from mcmc_functions import logpost_DWD
+from IFMR_stats import logpost_DWD
 from DWD_class import load_DWDs
 
 N_CPU = 10

@@ -5,7 +5,7 @@ import pickle
 import numpy as np
 import emcee
 from IFMR_tools import pairwise
-from mcmc_functions import logpost_DWDs
+from IFMR_stats import logpost_DWDs
 
 N_CPU = 10
 Nwalkers, Nstep = 100, 300

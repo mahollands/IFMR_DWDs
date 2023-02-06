@@ -4,7 +4,7 @@ from multiprocessing import Pool
 import numpy as np
 import emcee
 from IFMR_tools import pairwise
-from mcmc_functions import logpost_DWDs
+from IFMR_stats import logpost_DWDs
 from DWD_sets import good_DWDs_220630 as use_DWDs
 from DWD_class import load_DWDs
 

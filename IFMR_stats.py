@@ -14,7 +14,7 @@ MONOTONIC_MASS_LOSS = False
 MCH_PRIOR = False
 STRICT_MASS_LOSS = True
 DIRECT_MI_INTEGRATION = False
-N_MARGINALISE = 10000
+N_MARGINALISE = 10_000
 
 if not MONOTONIC_IFMR and not DIRECT_MI_INTEGRATION:
     raise ValueError("Cannot fit non-monotonic IFMR with integration over Mf")
