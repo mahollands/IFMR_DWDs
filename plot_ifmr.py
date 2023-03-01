@@ -1,9 +1,10 @@
+#!/usr/bin/env python
 import pickle
 import numpy as np
 import corner
 import matplotlib.pyplot as plt
-from mcmc_functions import MSLT, loglike_Mi12_mixture
 from DWD_class import load_DWDs
+from IFMR_stats import MSLT, loglike_Mi12_mixture
 from IFMR_tools import IFMR_cls
 
 BURN = -10

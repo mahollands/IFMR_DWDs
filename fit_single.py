@@ -1,3 +1,4 @@
+#!/usr/bin/python
 import os
 os.environ["OMP_NUM_THREADS"] = "1"
 from multiprocessing import Pool
