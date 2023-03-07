@@ -14,7 +14,7 @@ MONOTONIC_MASS_LOSS = False
 MCH_PRIOR = False
 STRICT_MASS_LOSS = True
 DIRECT_MI_INTEGRATION = False
-N_MARGINALISE = 10_000
+N_MARGINALISE = 1600
 
 if not MONOTONIC_IFMR and not DIRECT_MI_INTEGRATION:
     raise ValueError("Cannot fit non-monotonic IFMR with integration over Mf")
@@ -151,8 +151,8 @@ def logprior_DWDs(params, IFMR, outliers=False):
         return -np.inf
 
     log_priors = [
-        -log(Teff_err),
-        -log(logg_err),
+        -2*log(Teff_err) - 0.5/Teff_err**2 * 2.621E-4 #From WDJ1336AB
+        -2*log(logg_err) - 0.5/logg_err**2 * 5.559E-3 #From WDJ1336AB
     ]
 
     return sum(log_priors) + logprior_IFMR(IFMR)
