@@ -151,8 +151,9 @@ def logprior_DWDs(params, IFMR, outliers=False):
         return -np.inf
 
     log_priors = [
-        -2*log(Teff_err) - 0.5/Teff_err**2 * 2.621E-4 #From WDJ1336AB
-        -2*log(logg_err) - 0.5/logg_err**2 * 5.559E-3 #From WDJ1336AB
+        #inverse gamma on variance with Jeffrey's prior
+        -3*log(Teff_err) - 0.5/Teff_err**2 * 2.621E-4 #From WDJ1336AB
+        -3*log(logg_err) - 0.5/logg_err**2 * 5.559E-3 #From WDJ1336AB
     ]
 
     return sum(log_priors) + logprior_IFMR(IFMR)
