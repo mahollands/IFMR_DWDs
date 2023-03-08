@@ -114,7 +114,7 @@ def logprior_IFMR(IFMR):
     """
     Prior on the IFMR only
     """
-    if STRICT_MASS_LOSS and not all(0 < q < 1 for q in IFMR.Mf_Mi):
+    if STRICT_MASS_LOSS and not all(0 < q < 1 for q in IFMR.mass_loss):
         return -np.inf
 
     if MCH_PRIOR and np.any(IFMR.y > 1.4):
