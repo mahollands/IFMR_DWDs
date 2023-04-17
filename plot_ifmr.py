@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import ast
 import pickle
 import numpy as np
 import corner
@@ -15,16 +16,20 @@ PLOT_TOTAL_AGES = True
 OUTLIERS = True
 SIMULATED = False
 
-if OUTLIERS:
-    if SIMULATED:
-        from fit_simulated_ifmr_outliers_errors import ifmr_x, f_MCMC_out
-        from simulated_population import IFMR_true, TEFF_ERR, LOGG_ERR, \
-            SIGMA_WEIRD, P_weird_true
-        params_true = [P_weird_true, SIGMA_WEIRD, TEFF_ERR, LOGG_ERR, *IFMR_true.y]
+if OUTLIERS and SIMULATED:
+    from simulated_population import IFMR_true, TEFF_ERR, LOGG_ERR, \
+        SIGMA_WEIRD, P_weird_true
+    params_true = [P_weird_true, SIGMA_WEIRD, TEFF_ERR, LOGG_ERR, *IFMR_true.y]
+
+f_MCMC_out = "IFMR_MCMC_outliers"
+with open("MCMC_meta.dat") as F:
+    for line in F:
+        fname_chain, ifmr_x_str = line.split(" : ")
+        if f_MCMC_out == fname_chain:
+            ifmr_x = np.array(ast.literal_eval(ifmr_x_str))
+            break
     else:
-        from fit_ifmr_outliers_errors import ifmr_x, f_MCMC_out
-else:
-    from fit_ifmr_errors import ifmr_x, f_MCMC_out
+        raise ValueError(f"Could not find meta data for {f_MCMC_out}")
 
 chain = np.load(f"MCMC_output/{f_MCMC_out}_chain.npy")
 lnp = np.load(f"MCMC_output/{f_MCMC_out}_lnprob.npy")
@@ -114,7 +119,7 @@ def IFMR_figure(final):
 
 def total_ages_figure(final, DWD):
     plt.figure(DWD.name, figsize=(6, 6))
-    plt.plot([0,15], [0,15], 'k:')
+    plt.plot([0,20], [0,20], 'k:')
     P_coeval = []
     for params in final:
         if OUTLIERS:
@@ -125,8 +130,7 @@ def total_ages_figure(final, DWD):
         Mf1, Mf2, tau1, tau2 = DWD.Mtau_samples(Teff_err, logg_err)
         if not all(IFMR.y[0] < Mf < IFMR.y[-1] for Mf in (Mf1, Mf2)):
             continue
-        Mi1, Mi2 = IFMR.inv([Mf1, Mf2])
-        Mi12 = np.array([Mi1, Mi2])
+        Mi1, Mi2 = Mi12 = IFMR.inv([Mf1, Mf2])
 
         if OUTLIERS:
             if not all(0.6 < Mi < 8 for Mi in (Mi1, Mi2)):
@@ -134,9 +138,10 @@ def total_ages_figure(final, DWD):
             else:
                 covMdtau = DWD.covMdtau_systematics(Teff_err, logg_err)
                 logL_coeval, logL_weird = loglike_Mi12_mixture(Mi12, \
-                    DWD.vecMdtau, covMdtau, IFMR, P_weird, scale_weird, separate=True)
-                logL_tot = np.logaddexp(logL_coeval, logL_weird)
-                P_i = float(np.exp(logL_coeval-logL_tot))
+                    DWD.vecMdtau, covMdtau, IFMR, P_weird, scale_weird, \
+                    separate=True)
+                logP_i = logL_coeval - np.logaddexp(logL_coeval, logL_weird)
+                P_i = float(np.exp(logP_i))
             P_coeval.append(P_i)
 
         t1, t2 = MSLT(Mi1), MSLT(Mi2)
@@ -149,9 +154,9 @@ def total_ages_figure(final, DWD):
     print(f"{DWD.name}, {np.mean(P_coeval):.3f}, {np.median(P_coeval):.3f}")
 
     plt.loglog()
-    plt.xlim(0.2, 13)
-    plt.ylim(0.2, 13)
-    tick_labels = [0.2, 0.5, 1.0, 2.0, 5.0, 10.0]
+    plt.xlim(0.2, 20)
+    plt.ylim(0.2, 20)
+    tick_labels = [0.2, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0]
     plt.xticks(tick_labels, tick_labels)
     plt.yticks(tick_labels, tick_labels)
     plt.xlabel("t_tot1 [Gyr]")

@@ -8,3 +8,5 @@ noddy_ifmr.py
 plot2.py
 plot_ifmr_dwd.py
 plot_ifmr_talk.py
+MCMC_meta.dat
+testing_*.py

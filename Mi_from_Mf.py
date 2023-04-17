@@ -7,6 +7,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from IFMR_tools import IFMR_cls, MSLT
 
+f_MCMC_out = "IFMR_MCMC_outliers"
+
 parser = argparse.ArgumentParser()
 parser.add_argument("Mf_mean", type=float, \
     help = "Central value of the white dwarf final mass in Msun")
@@ -23,10 +25,14 @@ if not 0 < args.Mf_mean < 1.4:
 if args.Mf_mean < 0:
     raise ValueError("Mf err must be positive")
 
-if args.outliers:
-    from fit_ifmr_outliers_errors import ifmr_x, f_MCMC_out
-else:
-    from fit_ifmr_errors import ifmr_x, f_MCMC_out
+with open("MCMC_meta.dat") as F:
+    for line in F:
+        fname_chain, ifmr_x_str = line.split(" : ")
+        if f_MCMC_out == fname_chain:
+            ifmr_x = np.array(ast.literal_eval(ifmr_x_str))
+            break
+    else:
+        raise ValueError(f"Could not find meta data for {f_MCMC_out}")
 
 chain = np.load(f"MCMC_output/{f_MCMC_out}_chain.npy")
 final = chain[:,-1,:]
