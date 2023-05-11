@@ -141,3 +141,25 @@ bad_DWDs_230206 = {
     "runE_WDJ0240-3248AB", #A component magnetic with poor phot fit
     "runE_WDJ1929-5313AB", #both components v. low mass
 }
+
+bad_DWDs_230511 = {
+    "runA_WDJ1124-1234AB", #A component has a He atm
+    "runA_WDJ1314+1732AB", #magnetism issue
+    "runA_WDJ1636+0927AB", #poor fit to magnetic
+    "runA_WDJ1827+0403AB", #B component v. low mass and A compt poor phot fit
+    "runB_WDJ1729+2916AB", #B component has a He atm
+    "runB_WDJ1859-5529AB", #poor agreement between A and B -- B possibly He atm
+    "runB_WDJ2230-7513AB", #Both objects v. low mass
+    "runC_WDJ0002+0733AB", #A component poor fit to phot due to magnetism
+    "runC_WDJ0007-1605AB", #A component poor phot fit -- possibly He atm
+    "runC_WDJ2122+3005AB", #B component v. low mass and A component has He atm
+    "runD_WDJ1211-4551AB", #B component v. low mass
+    "runD_WDJ1350-5025AB", #A component has a He atm or strongly magnetic
+    "runD_WDJ1557-3832AB", #both components v. low mass
+    "runD_WDJ1804-6617AB", #B component v. low mass
+    "runD_WDJ1929-3000AB", #B component has a He atm
+    "runE_WDJ0240-3248AB", #A component magnetic with poor phot fit
+    "runE_WDJ1929-5313AB", #both components v. low mass
+    "runE_WDJ2248-5830AB", #A component low mass
+    "runE_WDJ2259+1404AB", #A component magnetic throwing off phot fit
+}

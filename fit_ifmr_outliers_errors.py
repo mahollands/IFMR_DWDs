@@ -5,7 +5,7 @@ from multiprocessing import Pool
 import numpy as np
 import emcee
 from IFMR_stats import logpost_DWDs
-from DWD_sets import bad_DWDs_230206 as dont_use_DWDs
+from DWD_sets import bad_DWDs_230420 as dont_use_DWDs
 from DWD_class import load_DWDs
 from scipy.stats import invgamma
 
