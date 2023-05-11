@@ -10,12 +10,9 @@ from DWD_class import load_DWDs
 from scipy.stats import invgamma
 
 N_CPU = 10
-Nwalkers, Nstep = 100, 1000
-#f_MCMC_out = "IFMR_MCMC_outliers_230308_simple"
-f_MCMC_out = "IFMR_MCMC_outliers_221115"
-#ifmr_x = np.array([0.75, 1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6, 8])
-ifmr_x = np.array([0.75, 2.8, 3.6, 8])
-#ifmr_y_ = np.array([0.5, 0.7, 0.9, 1.2])
+Nwalkers, Nstep = 100, 200
+f_MCMC_out = "IFMR_MCMC_outliers_230511"
+ifmr_x = np.array([0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6, 8])
 ifmr_y_ = (1.4-0.4)/(8-0.5) * (ifmr_x-0.5) + 0.4
 
 ###########################################################################
@@ -27,8 +24,8 @@ def run_MCMC(DWDs):
     pos0 = np.array([
         np.random.random(Nwalkers), #P_weird
         np.random.rayleigh(1.0, Nwalkers), #sig_weird
-        np.sqrt(invgamma.rvs(a=1, scale=2.621E-4/2, size=Nwalkers)), #Teff_err
-        np.sqrt(invgamma.rvs(a=1, scale=5.559E-3/2, size=Nwalkers)), #logg_err
+        np.sqrt(invgamma.rvs(a=1, scale=1.577E-4/2, size=Nwalkers)), #Teff_err
+        np.sqrt(invgamma.rvs(a=1, scale=2.978E-3/2, size=Nwalkers)), #logg_err
     ] + [np.random.normal(mf, 0.01, Nwalkers) for mf in ifmr_y_] #IFMR
     ).T
 
