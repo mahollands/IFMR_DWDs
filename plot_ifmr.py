@@ -21,7 +21,7 @@ if OUTLIERS and SIMULATED:
         SIGMA_WEIRD, P_weird_true
     params_true = [P_weird_true, SIGMA_WEIRD, TEFF_ERR, LOGG_ERR, *IFMR_true.y]
 
-f_MCMC_out = "IFMR_MCMC_outliers"
+f_MCMC_out = "IFMR_MCMC_outliers_230511"
 with open("MCMC_meta.dat") as F:
     for line in F:
         fname_chain, ifmr_x_str = line.split(" : ")
