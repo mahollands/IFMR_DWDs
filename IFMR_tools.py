@@ -9,7 +9,8 @@ import matplotlib.pyplot as plt
 #MS lifetime from MESA data
 M_init, t_pre = np.loadtxt("MESA_lifetime.dat", unpack=True, skiprows=1)
 t_pre /= 1e9 #to Gyr
-log_tau_fun = interp1d(np.log(M_init), np.log(t_pre), kind='linear', bounds_error=False)
+log_tau_fun = interp1d(np.log(M_init), np.log(t_pre), kind='linear', \
+    assume_sorted=True, copy=False, bounds_error=False)
 
 def MSLT(Mi):
     """
@@ -31,8 +32,8 @@ class IFMR_cls(interp1d):
     and vice-versa. All masses in units of Msun.
     """
     def __init__(self, ifmr_x, ifmr_y):
-        super().__init__(ifmr_x, ifmr_y)
-        self.inv = interp1d(self.y, self.x)
+        super().__init__(ifmr_x, ifmr_y, assume_sorted=True)
+        self.inv = interp1d(self.y, self.x, assume_sorted=True, copy=False)
         self.i_grads = np.diff(self.x)/np.diff(self.y)
         self.y_x = self.y/self.x
 
