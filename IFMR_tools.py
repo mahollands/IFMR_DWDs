@@ -31,26 +31,24 @@ class IFMR_cls(interp1d):
     IFMR class for calculating final masses from initial masses
     and vice-versa. All masses in units of Msun.
     """
-    def __init__(self, ifmr_x, ifmr_y):
-        super().__init__(ifmr_x, ifmr_y, assume_sorted=True)
-        self.inv = interp1d(self.y, self.x, assume_sorted=True, copy=False)
-        self.i_grads = np.diff(self.x)/np.diff(self.y)
-        self.y_x = self.y/self.x
+    def __init__(self, ifmr_x, ifmr_y, **ifmr_kw):
+        ifmr_kw['kind'] = 'linear'
+        ifmr_kw['assume_sorted'] = True
+        super().__init__(ifmr_x, ifmr_y, **ifmr_kw)
+
+        ifmr_kw['copy'] = False
+        self.inv = interp1d(self.y, self.x, **ifmr_kw)
+
+        ifmr_kw['kind'] = 'next'
+        dydx = np.diff(self.y, prepend=0)/np.diff(self.x, prepend=0)
+        self.grad = interp1d(self.x, dydx, **ifmr_kw)
+        self.inv_grad = interp1d(self.y, 1/dydx, **ifmr_kw)
 
     def __repr__(self):
         return "IFMR_cls({}, {})".format(list(self.x), list(self.y))
 
     def __len__(self):
         return len(self.x)
-
-    def inv_grad(self, Mf):
-        """
-        The gradient of the inverse IFMR, for a piecewise
-        linear and piecewise continuous IFMR. This essentially
-        gets the jacobian dMi/dMf
-        """
-        segments = [Mf < y for y in self.y[1:]]
-        return np.select(segments, self.i_grads)
 
     @property
     def Mi(self):
@@ -71,7 +69,7 @@ class IFMR_cls(interp1d):
         """
         Mf_Mi is alias for y_x array storing ratio of Mf/Mi
         """
-        return self.y_x
+        return self.y/self.x
 
     @property
     def mass_loss(self):
