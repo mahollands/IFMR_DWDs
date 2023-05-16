@@ -54,7 +54,7 @@ class DWDcontainer:
         covMdtau = self.covMdtau_systematics(Teff_err, logg_err)
         if N_samples == 1:
             return np.random.multivariate_normal(self.vecMdtau, covMdtau)
-        return np.random.multivariate_normal(self.vecMdtau, covMdtau, (3, N_samples))
+        return np.random.multivariate_normal(self.vecMdtau, covMdtau, N_samples).T
 
     def Mtau_samples(self, Teff_err, logg_err, N_samples=1):
         """
@@ -63,7 +63,19 @@ class DWDcontainer:
         covMtau = self.covMtau_systematics(Teff_err, logg_err)
         if N_samples == 1:
             return np.random.multivariate_normal(self.vecMtau, covMtau)
-        return np.random.multivariate_normal(self.vecMtau, covMtau, (4, N_samples))
+        return np.random.multivariate_normal(self.vecMtau, covMtau, N_samples).T
+
+    @property
+    def M1(self):
+        return self.vecMtau[0]
+
+    @property
+    def M2(self):
+        return self.vecMtau[1]
+
+    @property
+    def M12(self):
+        return self.vecMtau[:2]
 
 def Taylor_Expand_WD(T, g, dT=10, dg=0.001, thickness='thick'):
     """
