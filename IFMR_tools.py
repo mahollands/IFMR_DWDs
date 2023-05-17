@@ -32,8 +32,13 @@ class IFMR_cls(interp1d):
     and vice-versa. All masses in units of Msun.
     """
     def __init__(self, ifmr_x, ifmr_y, **ifmr_kw):
-        ifmr_kw['kind'] = 'linear'
-        ifmr_kw['assume_sorted'] = True
+        ifmr_kw.update({
+            'kind': 'linear',
+            'assume_sorted': True,
+            'bounds_error': False,
+            'fill_value': 'extrapolate'
+        })
+
         super().__init__(ifmr_x, ifmr_y, **ifmr_kw)
 
         ifmr_kw['copy'] = False
