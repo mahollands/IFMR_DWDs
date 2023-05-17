@@ -55,7 +55,7 @@ class IFMR_cls(interp1d):
     def __len__(self):
         return len(self.x)
 
-    def __getitem(self, key):
+    def __getitem__(self, key):
         if not isinstance(key, slice):
             raise TypeError("subscript key must be slice object")
         xnew, ynew = self.x[key], self.y[key]
