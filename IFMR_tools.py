@@ -55,6 +55,14 @@ class IFMR_cls(interp1d):
     def __len__(self):
         return len(self.x)
 
+    def __getitem(self, key):
+        if not isinstance(key, slice):
+            raise TypeError("subscript key must be slice object")
+        xnew, ynew = self.x[key], self.y[key]
+        if len(xnew) < 2:
+            raise ValueError("IFMR must have at least two break points")
+        return IFMR_cls(xnew, ynew)
+
     @property
     def Mi(self):
         """
