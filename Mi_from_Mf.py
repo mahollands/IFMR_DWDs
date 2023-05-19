@@ -4,10 +4,10 @@ Tool for converting final masses to initial masses, including uncertainies
 in the final mass and the IFMR itself.
 """
 import argparse
-import ast
 import numpy as np
 import matplotlib.pyplot as plt
 from IFMR_tools import IFMR_cls, MSLT
+from misc import load_fitted_IFMR
 
 f_MCMC_out = "IFMR_MCMC_outliers_230511_extend01"
 BURN = -100
@@ -29,16 +29,7 @@ if not 0 < args.Mf_mean < 1.4:
 if args.Mf_mean < 0:
     raise ValueError("Mf err must be positive")
 
-with open("MCMC_meta.dat") as F:
-    for line in F:
-        fname_chain, ifmr_x_str = line.split(" : ")
-        if f_MCMC_out == fname_chain:
-            ifmr_x = np.array(ast.literal_eval(ifmr_x_str))
-            break
-    else:
-        raise ValueError(f"Could not find meta data for {f_MCMC_out}")
-
-chain = np.load(f"MCMC_output/{f_MCMC_out}_chain.npy")
+ifmr_x, chain, lnp = load_fitted_IFMR(f_MCMC_out)
 final = chain[:,BURN::THIN,:].reshape((-1,chain.shape[-1]))
 
 Nskip = 4 if args.outliers else 2

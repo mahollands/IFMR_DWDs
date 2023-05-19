@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import ast
 import pickle
 import numpy as np
 import corner
@@ -7,12 +6,13 @@ import matplotlib.pyplot as plt
 from DWD_class import load_DWDs
 from IFMR_stats import MSLT, loglike_Mi12_mixture
 from IFMR_tools import IFMR_cls
+from misc import load_fitted_IFMR
 
-BURN = -10
-PLOT_CHAINS = True
+BURN = -1000
+PLOT_CHAINS = False
 PLOT_CORNER = True
-PLOT_IFMR = True
-PLOT_TOTAL_AGES = True
+PLOT_IFMR = False
+PLOT_TOTAL_AGES = False
 OUTLIERS = True
 SIMULATED = False
 
@@ -21,19 +21,9 @@ if OUTLIERS and SIMULATED:
         SIGMA_WEIRD, P_weird_true
     params_true = [P_weird_true, SIGMA_WEIRD, TEFF_ERR, LOGG_ERR, *IFMR_true.y]
 
-f_MCMC_out = "IFMR_MCMC_outliers_230511"
-with open("MCMC_meta.dat") as F:
-    for line in F:
-        fname_chain, ifmr_x_str = line.split(" : ")
-        if f_MCMC_out == fname_chain:
-            ifmr_x = np.array(ast.literal_eval(ifmr_x_str))
-            break
-    else:
-        raise ValueError(f"Could not find meta data for {f_MCMC_out}")
+ifmr_x, chain, lnp = load_fitted_IFMR("IFMR_MCMC_outliers_230511_extend01")
 
-chain = np.load(f"MCMC_output/{f_MCMC_out}_chain.npy")
-lnp = np.load(f"MCMC_output/{f_MCMC_out}_lnprob.npy")
-final = chain[:,-1,:]
+final = chain[:,BURN::5,:].reshape((-1, chain.shape[-1]))
 best_coords = np.where(lnp == lnp.max())
 best = chain[best_coords[0][0], best_coords[1][0]]
 
@@ -49,9 +39,6 @@ if OUTLIERS:
 def chain_figure(chain, final, Ndim, Nwalkers):
     plt.figure("chains", figsize=(12, 8))
     for idim, label in enumerate(labels):
-        pcs = [np.percentile(final[:,idim], pc) for pc in (16, 50, 84)]
-        args = label, pcs[1], *np.diff(pcs), best[idim]
-        print("{} {:.3f}_-{:.3f}^+{:.3f} {:.3f}".format(*args))
         plt.subplot(5, 4, idim+1)
         for iwalker in range(min(Nwalkers, 1000)):
             plt.plot(chain[iwalker,:,idim], 'k-', alpha=0.05)
@@ -74,7 +61,6 @@ def lnprob_figure(lnp, Nwalkers):
     plt.show()
 
 def IFMR_figure(final):
-
     final_ = final[:,-len(ifmr_x):]
     best_ = best[-len(ifmr_x):]
 
@@ -169,15 +155,24 @@ def total_ages_figure(final, DWD):
     #plt.show()
 
 if __name__ == "__main__":
+    for idim, label in enumerate(labels):
+        pcs = [np.percentile(final[:,idim], pc) for pc in (16, 50, 84)]
+        args = label, pcs[1], *np.diff(pcs), best[idim]
+        print("{} {:.3f}_-{:.3f}^+{:.3f} {:.3f}".format(*args))
+
     if PLOT_CHAINS:
         chain_figure(chain, final, Ndim, Nwalkers)
         #lnprob_figure(lnp, Nwalkers)
 
     if PLOT_CORNER:
-        data = chain[:,BURN::1,:]
+        #data = chain[:,BURN::1,:]
+        #data = data.reshape((data.shape[0]*data.shape[1], data.shape[2]))
+        #corner.corner(data, smooth1d=True, labels=labels, truths=best, \
+        #    quantiles=[0.16, 0.50, 0.84])
+        data = chain[:,BURN::1,:4]
         data = data.reshape((data.shape[0]*data.shape[1], data.shape[2]))
-        corner.corner(data, smooth1d=True, labels=labels, truths=best, \
-            quantiles=[0.16, 0.50, 0.84])
+        corner.corner(data, bins=50, labels=labels[:4], quantiles=[0.16, 0.50, 0.84], \
+            color='#333333')
         plt.savefig("IFMR_corner.png", dpi=200)
         plt.show()
 

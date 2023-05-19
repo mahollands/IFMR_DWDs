@@ -8,15 +8,16 @@ from IFMR_stats import logpost_DWDs
 from DWD_sets import bad_DWDs_230511 as dont_use_DWDs
 from DWD_class import load_DWDs
 from scipy.stats import invgamma
+from misc import load_fitted_IFMR, write_fitted_IFMR
 
 N_CPU = 10
-Nwalkers, Nstep = 1000, 8000
-f_MCMC_out = "IFMR_MCMC_outliers_230511_extend01"
+Nwalkers, Nstep = 1000, 10000
+f_MCMC_out = "IFMR_MCMC_outliers_monoML_230519"
 ifmr_x = np.array([0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6, 8])
 ifmr_y_ = (1.4-0.4)/(8-0.5) * (ifmr_x-0.5) + 0.4
 
-continue_run = True
-continue_from = "IFMR_MCMC_outliers_230511"
+continue_run = False
+f_continue_from = ""
 
 ###########################################################################
 # MCMC starts here
@@ -25,7 +26,8 @@ def run_MCMC(DWDs):
     print(len(DWDs))
 
     if continue_run:
-        pos0 = np.load(f"MCMC_output/{continue_from}_chain.npy")[:,-1,:]
+        ifmr_x, chain, _ = load_fitted_IFMR(f_continue_from)
+        pos0 = chain[:,-1,:]
     else:
         pos0 = np.array([
             np.random.random(Nwalkers), #P_weird
@@ -43,11 +45,8 @@ def run_MCMC(DWDs):
             args=(DWDs, ifmr_x, True), pool=pool)
         sampler.run_mcmc(pos0, Nstep, progress=True)
 
-    np.save(f"MCMC_output/{f_MCMC_out}_chain.npy", sampler.chain)
-    np.save(f"MCMC_output/{f_MCMC_out}_lnprob.npy", sampler.lnprobability)
+    write_fitted_IFMR(f_MCMC_out, ifmr_x, sampler)
 
 if __name__ == "__main__":
     DWDs = load_DWDs(exclude_set=dont_use_DWDs)
     run_MCMC(DWDs)
-    with open("MCMC_meta.dat", 'a') as F:
-        F.write(f"{f_MCMC_out} : {list(ifmr_x)}\n")
