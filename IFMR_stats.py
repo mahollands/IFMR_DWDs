@@ -11,10 +11,9 @@ from IFMR_tools import IFMR_cls, MSLT
 from misc import is_sorted
 
 MONOTONIC_IFMR = True
-MONOTONIC_MASS_LOSS = False
+MONOTONIC_MASS_LOSS = True
 MCH_PRIOR = False
 STRICT_MASS_LOSS = True
-N_MARGINALISE = 1600
 N_MARGINALISE = 10000
 
 ##################################
