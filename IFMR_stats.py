@@ -13,12 +13,8 @@ MONOTONIC_IFMR = True
 MONOTONIC_MASS_LOSS = False
 MCH_PRIOR = False
 STRICT_MASS_LOSS = True
-DIRECT_MI_INTEGRATION = False
 N_MARGINALISE = 1600
 N_MARGINALISE = 10000
-
-if not MONOTONIC_IFMR and not DIRECT_MI_INTEGRATION:
-    raise ValueError("Cannot fit non-monotonic IFMR with integration over Mf")
 
 ##################################
 # constants
@@ -89,16 +85,16 @@ def loglike_DWD(params, DWD, IFMR, outliers=False):
     covMdtau = DWD.covMdtau_systematics(Teff_err, logg_err)
     vecM, covM = DWD.vecMdtau[:2], covMdtau[:2,:2]
 
-    if DIRECT_MI_INTEGRATION:
-        Mi12 = np.random.uniform(0.6, 8, (2, N_MARGINALISE))
-        log_weights = log_weights_uniform
-        jac1, jac2 = 1, 1
-    else:
+    if MONOTONIC_IFMR:
         Mi12, Mf12 = IFMR.draw_Mi_samples(vecM, covM, N_MARGINALISE)
         if len(Mf12) <= 1:
             return -np.inf
         log_weights = -stats.multivariate_normal.logpdf(Mf12, mean=vecM, cov=covM)
         jac1, jac2 = IFMR.inv_grad(Mf12).T
+    else:
+        Mi12 = np.random.uniform(0.6, 8, (2, N_MARGINALISE))
+        log_weights = log_weights_uniform
+        jac1, jac2 = 1, 1
 
     #importance sampling
     log_like = loglike_Mi12_(Mi12, DWD.vecMdtau, covMdtau, IFMR)
@@ -122,7 +118,7 @@ def logprior_IFMR(IFMR):
         return -np.inf
 
     ifmr_sorted = np.allclose(IFMR.y, np.sort(IFMR.y))
-    mass_loss_sorted  = np.allclose(IFMR.mass_loss, np.sort(IFMR.mass_loss))
+    mass_loss_sorted = np.allclose(IFMR.mass_loss, np.sort(IFMR.mass_loss))
     if MONOTONIC_IFMR:
         if not ifmr_sorted:
             return -np.inf
