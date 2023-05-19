@@ -20,6 +20,9 @@ N_MARGINALISE = 10000
 # constants
 log_weights_uniform = 2*log(8-0.6)
 
+def is_sorted(arr):
+    return np.all(arr[1:] >= arr[:-1])
+
 def loglike_Mi12(Mi12, vec, cov, IFMR, outliers=False, scale_weird=None):
     """
     Computes the likelihood of an IFMR and initial masses for parameters
@@ -117,12 +120,10 @@ def logprior_IFMR(IFMR):
     if MCH_PRIOR and np.any(IFMR.y > 1.4):
         return -np.inf
 
-    ifmr_sorted = np.allclose(IFMR.y, np.sort(IFMR.y))
-    mass_loss_sorted = np.allclose(IFMR.mass_loss, np.sort(IFMR.mass_loss))
     if MONOTONIC_IFMR:
-        if not ifmr_sorted:
+        if not is_sorted(IFMR.y):
             return -np.inf
-        if MONOTONIC_MASS_LOSS and not mass_loss_sorted:
+        if MONOTONIC_MASS_LOSS and not is_sorted(IFMR.mass_loss):
             return -np.inf
 
     return 0
