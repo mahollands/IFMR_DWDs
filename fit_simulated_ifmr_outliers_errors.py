@@ -5,8 +5,8 @@ from multiprocessing import Pool
 import pickle
 import numpy as np
 import emcee
-from IFMR_tools import pairwise
 from IFMR_stats import logpost_DWDs
+from misc import pairwise
 
 N_CPU = 10
 Nwalkers, Nstep = 100, 300

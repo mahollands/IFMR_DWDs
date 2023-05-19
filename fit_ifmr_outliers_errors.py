@@ -10,7 +10,7 @@ from DWD_class import load_DWDs
 from scipy.stats import invgamma
 
 N_CPU = 10
-Nwalkers, Nstep = 1000, 2000
+Nwalkers, Nstep = 1000, 8000
 f_MCMC_out = "IFMR_MCMC_outliers_230511_extend01"
 ifmr_x = np.array([0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6, 8])
 ifmr_y_ = (1.4-0.4)/(8-0.5) * (ifmr_x-0.5) + 0.4

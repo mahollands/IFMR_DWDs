@@ -4,10 +4,10 @@ os.environ["OMP_NUM_THREADS"] = "1"
 from multiprocessing import Pool
 import numpy as np
 import emcee
-from IFMR_tools import pairwise
 from IFMR_stats import logpost_DWDs
 from DWD_sets import good_DWDs_220630 as use_DWDs
 from DWD_class import load_DWDs
+from misc import pairwise
 
 N_CPU = 10
 Nwalkers, Nstep = 100, 100

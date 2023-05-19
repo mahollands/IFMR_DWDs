@@ -1,7 +1,6 @@
 """
 Routines and classes for working with Initial-Final Mass-Relations.
 """
-from itertools import tee
 import numpy as np
 from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
@@ -17,14 +16,6 @@ def MSLT(Mi):
     Main sequence lifetime (Gyr) for an initial mass (Msun).
     """
     return np.exp(log_tau_fun(np.log(Mi)))
-
-def pairwise(iterable):
-    """
-    Roughly recreates the python 3.10 itertools.pairwise.
-    """
-    a, b = tee(iterable)
-    next(b, None)
-    return zip(a, b)
 
 class IFMR_cls(interp1d):
     """

@@ -8,6 +8,7 @@ import numba
 from scipy import stats
 from scipy.special import logsumexp
 from IFMR_tools import IFMR_cls, MSLT
+from misc import is_sorted
 
 MONOTONIC_IFMR = True
 MONOTONIC_MASS_LOSS = False
@@ -19,9 +20,6 @@ N_MARGINALISE = 10000
 ##################################
 # constants
 log_weights_uniform = 2*log(8-0.6)
-
-def is_sorted(arr):
-    return np.all(arr[1:] >= arr[:-1])
 
 def loglike_Mi12(Mi12, vec, cov, IFMR, outliers=False, scale_weird=None):
     """
