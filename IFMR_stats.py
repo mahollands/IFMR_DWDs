@@ -153,21 +153,13 @@ def logprior_DWDs(params, IFMR, outliers=False):
 
     return sum(log_priors) + logprior_IFMR(IFMR)
 
-def setup_params_IFMR(all_params, ifmr_x, outliers=False, single=False):
+def setup_params_IFMR(all_params, ifmr_x, outliers=False):
     """
-    Takes a full set of parameters, and removes those corresponding
+    Takes a full array of parameters, and removes those corresponding
     to IFMR y-values, instead returning a reduced set of parameters
     and an IFMR object.
     """
-    if single:
-        Mi1, Mi2, *ifmr_y = all_params
-        params = Mi1, Mi2
-    if outliers:
-        P_weird, scale_weird, Teff_err, logg_err, *ifmr_y = all_params
-        params = P_weird, scale_weird, Teff_err, logg_err
-    else:
-        Teff_err, logg_err, *ifmr_y = all_params
-        params = Teff_err, logg_err
+    params, ifmr_y = np.split(all_params, [4 if outliers else 2])
     return params, IFMR_cls(ifmr_x, ifmr_y)
 
 def logpost_DWD(all_params, DWD, ifmr_x):
