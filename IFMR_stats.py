@@ -11,8 +11,8 @@ from IFMR_tools import IFMR_cls, MSLT
 from misc import is_sorted
 
 MONOTONIC_IFMR = True
-MONOTONIC_MASS_LOSS = True
-MCH_PRIOR = False
+MONOTONIC_MASS_LOSS = False
+MCH_PRIOR = True
 STRICT_MASS_LOSS = True
 N_MARGINALISE = 10000
 
@@ -117,11 +117,11 @@ def logprior_IFMR(IFMR):
     if MCH_PRIOR and np.any(IFMR.y > 1.4):
         return -np.inf
 
-    if MONOTONIC_IFMR:
-        if not is_sorted(IFMR.y):
-            return -np.inf
-        if MONOTONIC_MASS_LOSS and not is_sorted(IFMR.mass_loss):
-            return -np.inf
+    if MONOTONIC_IFMR and not is_sorted(IFMR.y):
+        return -np.inf
+
+    if MONOTONIC_MASS_LOSS and not is_sorted(IFMR.mass_loss):
+        return -np.inf
 
     return 0
 
