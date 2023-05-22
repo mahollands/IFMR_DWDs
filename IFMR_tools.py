@@ -13,14 +13,15 @@ log_tau_fun = interp1d(np.log(M_init), np.log(t_pre), kind='linear', \
 
 def MSLT(Mi):
     """
-    Main sequence lifetime (Gyr) for an initial mass (Msun).
+    Main sequence lifetime (Gyr) for an initial mass (Msun). Interpolation is
+    piecewise-linear in log-log space, or in otherwords a broken power-law.
     """
     return np.exp(log_tau_fun(np.log(Mi)))
 
 class IFMR_cls(interp1d):
     """
-    IFMR class for calculating final masses from initial masses
-    and vice-versa. All masses in units of Msun.
+    IFMR class for calculating final masses from initial masses and vice-versa.
+    All masses in units of Msun. Keyword arguments are passed to interp1d.
     """
     def __init__(self, ifmr_x, ifmr_y, **ifmr_kw):
         ifmr_kw.update({
