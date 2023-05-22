@@ -26,11 +26,10 @@ def loglike_Mi12(Mi12, vec, cov, IFMR, outliers=False, scale_weird=None):
     of final masses and difference in WD cooling ages and their covariance.
     This is optionally computed for either the coeval or outlier distributions.
     """
-    Mf1, Mf2 = IFMR(Mi12)
+    Mf12 = IFMR(Mi12)
     tau1_ms, tau2_ms = MSLT(Mi12)
     dtau_ms = tau1_ms-tau2_ms
-    X = np.array([Mf1, Mf2, -dtau_ms])
-    cov_ = np.copy(cov)
+    X, cov_ = np.vstack([Mf12, -dtau_ms]), np.copy(cov)
     if outliers:
         cov_[2,2] += scale_weird**2
     return stats.multivariate_normal.logpdf(X.T, mean=vec, cov=cov_)
