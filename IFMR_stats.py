@@ -22,9 +22,10 @@ log_weights_uniform = 2*log(8-0.6)
 
 def loglike_Mi12(Mi12, vec, cov, IFMR, outliers=False, scale_weird=None):
     """
-    Computes the likelihood of an IFMR and initial masses for parameters
-    of final masses and difference in WD cooling ages and their covariance.
-    This is optionally computed for either the coeval or outlier distributions.
+    Computes the likelihood of an IFMR and initial masses for one DWD with
+    measured final masses and difference in WD cooling ages (and their
+    covariance). This is optionally computed for either the coeval or outlier
+    distributions.
     """
     Mf12 = IFMR(Mi12)
     tau1_ms, tau2_ms = MSLT(Mi12)
@@ -36,10 +37,10 @@ def loglike_Mi12(Mi12, vec, cov, IFMR, outliers=False, scale_weird=None):
 
 def loglike_Mi12_mixture(Mi12, vec, cov, IFMR, P_weird, scale_weird, separate=False):
     """
-    Computes the likelihood of an IFMR and initial masses for parameters
-    of final masses and difference in WD cooling ages and their covariance,
-    and under the assumption of a fraction of systems being outliers drawn
-    from an alternative distribution.
+    Computes the likelihood of an IFMR and initial masses for one DWD with
+    measured final masses and difference in WD cooling ages (and their
+    covariance), and under the assumption of a fraction of systems being
+    outliers drawn from a broader dtau_c distribution.
     """
     args = Mi12, vec, cov, IFMR
     logL_coeval  = loglike_Mi12(*args, outliers=False)
@@ -63,7 +64,8 @@ def loglike_Mi12_mixture(Mi12, vec, cov, IFMR, P_weird, scale_weird, separate=Fa
 @numba.vectorize
 def logprior_Mi12(Mi1, Mi2):
     """
-    Priors on inital masses
+    Priors on inital masses, i.e.
+    P(Mi1, Mi2) = (M1*M2)**-2.3
     """
     if not (0.6 < Mi1 < 8.0 and 0.6 < Mi2 < 8.0):
         return -np.inf
@@ -71,8 +73,8 @@ def logprior_Mi12(Mi1, Mi2):
 
 def loglike_DWD(params, DWD, IFMR, outliers=False):
     """
-    Marginal distribution :
-    P(DWD | theta) = \\iint P(Mi1, Mi2, DWD | theta) dMi1 dMi2
+    log of marginal distribution:
+    P(DWD | IFMR, theta) = \\iint P(Mi1, Mi2, DWD | IFMR, theta) dMi1 dMi2
     """
     if outliers:
         P_weird, scale_weird, Teff_err, logg_err = params
@@ -102,13 +104,13 @@ def loglike_DWD(params, DWD, IFMR, outliers=False):
 
 def loglike_DWDs(params, DWDs, IFMR, outliers=False):
     """
-    log likelihood for ifmr_y for all DWDs
+    log likelihood for IFMR (and hyperparams) for all DWDs
     """
     return sum(loglike_DWD(params, DWD, IFMR, outliers=outliers) for DWD in DWDs)
 
 def logprior_IFMR(IFMR):
     """
-    Prior on the IFMR only
+    Prior on the IFMR only. Specifically this amounts to cuts on the 
     """
     if STRICT_MASS_LOSS and not all(0 < q < 1 for q in IFMR.mass_loss):
         return -np.inf
