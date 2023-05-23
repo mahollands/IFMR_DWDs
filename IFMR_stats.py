@@ -20,7 +20,7 @@ N_MARGINALISE = 10000
 # constants
 log_weights_uniform = 2*log(8-0.6)
 
-def loglike_Mi12(Mi12, vec, cov, IFMR, outliers=False, scale_outlier=None):
+def loglike_Mi12(Mi12, vec, cov, IFMR, scale_outlier=None):
     """
     Computes the likelihood of an IFMR and initial masses for one DWD with
     measured final masses and difference in WD cooling ages (and their
@@ -31,7 +31,7 @@ def loglike_Mi12(Mi12, vec, cov, IFMR, outliers=False, scale_outlier=None):
     tau1_ms, tau2_ms = MSLT(Mi12)
     dtau_ms = tau1_ms-tau2_ms
     X, cov_ = np.vstack([Mf12, -dtau_ms]), np.copy(cov)
-    if outliers:
+    if scale_outlier is not None:
         cov_[2,2] += scale_outlier**2
     return stats.multivariate_normal.logpdf(X.T, mean=vec, cov=cov_)
 
@@ -43,8 +43,8 @@ def loglike_Mi12_mixture(Mi12, vec, cov, IFMR, P_outlier, scale_outlier, separat
     outliers drawn from a broader dtau_c distribution.
     """
     args = Mi12, vec, cov, IFMR
-    logL_coeval  = loglike_Mi12(*args, outliers=False)
-    logL_outlier = loglike_Mi12(*args, outliers=True, scale_outlier=scale_outlier)
+    logL_coeval  = loglike_Mi12(*args)
+    logL_outlier = loglike_Mi12(*args, scale_outlier=scale_outlier)
 
     if isinstance(logL_coeval, np.ndarray):
         logL_coeval[np.isnan(logL_coeval)] = -np.inf
