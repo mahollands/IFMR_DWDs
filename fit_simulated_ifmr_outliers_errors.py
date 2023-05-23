@@ -21,8 +21,8 @@ def run_MCMC(DWDs):
 
     Mf_ranges = np.linspace(0, 1.4, len(ifmr_x)+1)
     pos0 = np.array([
-        np.random.beta(1.0, 1.0, Nwalkers), #P_weird
-        np.random.rayleigh(5.0, Nwalkers), #sig_weird
+        np.random.beta(1.0, 1.0, Nwalkers), #P_outlier
+        np.random.rayleigh(5.0, Nwalkers), #sigma_outlier
         np.random.rayleigh(0.02, Nwalkers), #Teff_err
         np.random.rayleigh(0.02, Nwalkers), #logg_err
     ] + [np.random.uniform(*x01, Nwalkers) for x01 in pairwise(Mf_ranges)]).T

@@ -16,8 +16,8 @@ ifmr_y_true = np.array([0.15,0.55, 0.65, 0.85, 1.4])
 IFMR_true = IFMR_cls(ifmr_x_true, ifmr_y_true)
 TG_COV = np.diag([20, 20, 0.005, 0.005])
 SIGMA_WEIRD = 5.0
-N_coeval, N_weird = 35, 15
-P_weird_true = N_weird/(N_coeval+N_weird)
+N_coeval, N_outlier = 35, 15
+P_outlier_true = N_outlier/(N_coeval+N_outlier)
 
 def simulated_DWD(outlier=False):
     """
@@ -70,12 +70,12 @@ def simulated_DWD(outlier=False):
 
     return DWDcontainer("", Tg_vec, TG_COV)
 
-def simulated_DWDs(N_coeval, N_weird):
+def simulated_DWDs(N_coeval, N_outlier):
     """
     Generator function for a population of DWDs with a mixture
     of coeval and outlier systems.
     """
-    i_coeval, i_weird = 0, 0
+    i_coeval, i_outlier = 0, 0
     #Generate coeval DWDs
     while i_coeval < N_coeval:
         DWD = simulated_DWD()
@@ -85,16 +85,16 @@ def simulated_DWDs(N_coeval, N_weird):
         yield DWD
         i_coeval += 1
     #Generate coeval DWDs
-    while i_weird < N_weird:
+    while i_outlier < N_outlier:
         DWD = simulated_DWD(outlier=True)
         if DWD is None:
             continue
-        DWD.name = f"simulated_weird_{i_weird:02}"
+        DWD.name = f"simulated_outlier_{i_outlier:02}"
         yield DWD
-        i_weird += 1
+        i_outlier += 1
 
 if __name__ == "__main__":
-    DWDs = list(simulated_DWDs(N_coeval, N_weird))
+    DWDs = list(simulated_DWDs(N_coeval, N_outlier))
     for DWD in DWDs:
         print("{} {:5.0f}K {:5.0f}K {:.3f} {:.3f}".format(DWD.name, *DWD.Tg_vec))
     with open("DWDs_simulated.pkl", 'wb') as F:

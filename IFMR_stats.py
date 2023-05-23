@@ -20,7 +20,7 @@ N_MARGINALISE = 10000
 # constants
 log_weights_uniform = 2*log(8-0.6)
 
-def loglike_Mi12(Mi12, vec, cov, IFMR, outliers=False, scale_weird=None):
+def loglike_Mi12(Mi12, vec, cov, IFMR, outliers=False, scale_outlier=None):
     """
     Computes the likelihood of an IFMR and initial masses for one DWD with
     measured final masses and difference in WD cooling ages (and their
@@ -32,10 +32,10 @@ def loglike_Mi12(Mi12, vec, cov, IFMR, outliers=False, scale_weird=None):
     dtau_ms = tau1_ms-tau2_ms
     X, cov_ = np.vstack([Mf12, -dtau_ms]), np.copy(cov)
     if outliers:
-        cov_[2,2] += scale_weird**2
+        cov_[2,2] += scale_outlier**2
     return stats.multivariate_normal.logpdf(X.T, mean=vec, cov=cov_)
 
-def loglike_Mi12_mixture(Mi12, vec, cov, IFMR, P_weird, scale_weird, separate=False):
+def loglike_Mi12_mixture(Mi12, vec, cov, IFMR, P_outlier, scale_outlier, separate=False):
     """
     Computes the likelihood of an IFMR and initial masses for one DWD with
     measured final masses and difference in WD cooling ages (and their
@@ -44,22 +44,22 @@ def loglike_Mi12_mixture(Mi12, vec, cov, IFMR, P_weird, scale_weird, separate=Fa
     """
     args = Mi12, vec, cov, IFMR
     logL_coeval  = loglike_Mi12(*args, outliers=False)
-    logL_weird = loglike_Mi12(*args, outliers=True, scale_weird=scale_weird)
+    logL_outlier = loglike_Mi12(*args, outliers=True, scale_outlier=scale_outlier)
 
     if isinstance(logL_coeval, np.ndarray):
         logL_coeval[np.isnan(logL_coeval)] = -np.inf
-        logL_weird[np.isnan(logL_weird)] = -np.inf
+        logL_outlier[np.isnan(logL_outlier)] = -np.inf
     else:
         if np.isnan(logL_coeval):
             logL_coeval = -np.inf
-        if np.isnan(logL_weird):
-            logL_weird = -np.inf
+        if np.isnan(logL_outlier):
+            logL_outlier = -np.inf
 
-    logL_coeval += log1p(-P_weird)
-    logL_weird += log(P_weird)
+    logL_coeval += log1p(-P_outlier)
+    logL_outlier += log(P_outlier)
     if separate:
-        return logL_coeval, logL_weird
-    return np.logaddexp(logL_coeval, logL_weird)
+        return logL_coeval, logL_outlier
+    return np.logaddexp(logL_coeval, logL_outlier)
 
 @numba.vectorize
 def logprior_Mi12(Mi1, Mi2):
@@ -77,9 +77,9 @@ def loglike_DWD(params, DWD, IFMR, outliers=False):
     P(DWD | IFMR, theta) = \\iint P(Mi1, Mi2, DWD | IFMR, theta) dMi1 dMi2
     """
     if outliers:
-        P_weird, scale_weird, Teff_err, logg_err = params
+        P_outlier, scale_outlier, Teff_err, logg_err = params
         loglike_Mi12_ = partial(loglike_Mi12_mixture, \
-            P_weird=P_weird, scale_weird=scale_weird)
+            P_outlier=P_outlier, scale_outlier=scale_outlier)
     else:
         Teff_err, logg_err = params
         loglike_Mi12_ = loglike_Mi12
@@ -137,8 +137,8 @@ def logprior_DWDs(params, IFMR, outliers=False):
     priors on IFMR all and ifmr related parameters
     """
     if outliers:
-        P_weird, scale_weird, Teff_err, logg_err = params
-        if not 0 < P_weird < 1 or not 0 < scale_weird < 13.8:
+        P_outlier, scale_outlier, Teff_err, logg_err = params
+        if not 0 < P_outlier < 1 or not 0 < scale_outlier < 13.8:
             return -np.inf
     else:
         Teff_err, logg_err = params

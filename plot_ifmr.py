@@ -9,19 +9,20 @@ from IFMR_tools import IFMR_cls
 from misc import load_fitted_IFMR
 
 BURN = -1000
-PLOT_CHAINS = False
+PLOT_CHAINS = True
 PLOT_CORNER = True
-PLOT_IFMR = False
+PLOT_IFMR = True
 PLOT_TOTAL_AGES = False
 OUTLIERS = True
 SIMULATED = False
 
 if OUTLIERS and SIMULATED:
     from simulated_population import IFMR_true, TEFF_ERR, LOGG_ERR, \
-        SIGMA_WEIRD, P_weird_true
-    params_true = [P_weird_true, SIGMA_WEIRD, TEFF_ERR, LOGG_ERR, *IFMR_true.y]
+        SIGMA_OUTLIER, P_outlier_true
+    params_true = [P_outlier_true, SIGMA_OUTLIER, TEFF_ERR, LOGG_ERR, *IFMR_true.y]
 
-ifmr_x, chain, lnp = load_fitted_IFMR("IFMR_MCMC_outliers_230511_extend01")
+#ifmr_x, chain, lnp = load_fitted_IFMR("IFMR_MCMC_outliers_230511_extend01")
+ifmr_x, chain, lnp = load_fitted_IFMR("IFMR_MCMC_outliers_monoML_230519")
 
 final = chain[:,BURN::5,:].reshape((-1, chain.shape[-1]))
 best_coords = np.where(lnp == lnp.max())
@@ -31,7 +32,7 @@ Nwalkers, Nstep, Ndim = chain.shape
 labels = ["Teff_err", "logg_err"] \
     + [f"$y_{{{x}}}$: ${Mi:.1f}\,M_\odot$" for x, Mi in enumerate(ifmr_x, 1)]
 if OUTLIERS:
-    labels = ["P_weird", "scale_weird"] + labels
+    labels = ["P_outlier", "scale_outlier"] + labels
 
 ########################################
 # Make figures of chains and corner plot
@@ -109,7 +110,7 @@ def total_ages_figure(final, DWD):
     P_coeval = []
     for params in final:
         if OUTLIERS:
-            P_weird, scale_weird, Teff_err, logg_err, *ifmr_y = params
+            P_outlier, scale_outlier, Teff_err, logg_err, *ifmr_y = params
         else:
             Teff_err, logg_err, *ifmr_y = params
         IFMR = IFMR_cls(ifmr_x, ifmr_y)
@@ -123,10 +124,10 @@ def total_ages_figure(final, DWD):
                 P_i = 0
             else:
                 covMdtau = DWD.covMdtau_systematics(Teff_err, logg_err)
-                logL_coeval, logL_weird = loglike_Mi12_mixture(Mi12, \
-                    DWD.vecMdtau, covMdtau, IFMR, P_weird, scale_weird, \
+                logL_coeval, logL_outlier = loglike_Mi12_mixture(Mi12, \
+                    DWD.vecMdtau, covMdtau, IFMR, P_outlier, scale_outlier, \
                     separate=True)
-                logP_i = logL_coeval - np.logaddexp(logL_coeval, logL_weird)
+                logP_i = logL_coeval - np.logaddexp(logL_coeval, logL_outlier)
                 P_i = float(np.exp(logP_i))
             P_coeval.append(P_i)
 
