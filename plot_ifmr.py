@@ -47,7 +47,7 @@ def chain_figure(chain, final, Ndim, Nwalkers):
             plt.axhline(params_true[idim], c='b', ls=':')
         plt.ylabel(label)
     plt.tight_layout()
-    plt.savefig("IFMR_chains.png", dpi=200)
+    plt.savefig("figures/IFMR_chains.png", dpi=200)
     plt.show()
 
 def lnprob_figure(lnp, Nwalkers):
@@ -98,7 +98,7 @@ def IFMR_figure(final):
     plt.ylabel("$M_f/M_i$")
 
     plt.tight_layout()
-    plt.savefig("IFMR.png", dpi=200)
+    plt.savefig("figures/IFMR.png", dpi=200)
     plt.show()
 
 if __name__ == "__main__":
@@ -117,7 +117,7 @@ if __name__ == "__main__":
         data = data.reshape((data.shape[0]*data.shape[1], data.shape[2]))
         corner.corner(data, bins=50, labels=labels_, quantiles=[0.16, 0.50, 0.84], \
             color='#333333')
-        plt.savefig("IFMR_corner.png", dpi=200)
+        plt.savefig("figures/IFMR_corner.png", dpi=200)
         plt.show()
 
     if PLOT_IFMR:
