@@ -136,14 +136,9 @@ def load_DWDs(fname="DWDs_Teffs_loggs.pkl", use_set=None, exclude_set=None):
         DWD_dict = pickle.load(F)
 
     if use_set is not None:
-        DWDs = [DWDcontainer(name, Tg_vec, Tg_cov) \
-            for name, (Tg_vec, Tg_cov) in DWD_dict.items() \
-            if name in use_set]
+        DWD_dict = {k: v for k, v in DWD_dict.items() if k in use_set}
     elif exclude_set is not None:
-        DWDs = [DWDcontainer(name, Tg_vec, Tg_cov) \
-            for name, (Tg_vec, Tg_cov) in DWD_dict.items() \
-            if name not in exclude_set]
-    else:
-        DWDs = [DWDcontainer(name, Tg_vec, Tg_cov) \
-            for name, (Tg_vec, Tg_cov) in DWD_dict.items()]
+        DWD_dict = {k: v for k, v in DWD_dict.items() if k not in exclude_set}
+    DWDs = [DWDcontainer(name, *Tg_vec_cov) for name, Tg_vec_cov in DWD_dict.items()]
+
     return DWDs
