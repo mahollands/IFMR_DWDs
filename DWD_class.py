@@ -77,20 +77,20 @@ class DWDcontainer:
     def M12(self):
         return self.vecMtau[:2]
 
-def Taylor_Expand_WD(T, g, dT=10, dg=0.001, thickness='thick'):
+def Taylor_Expand_WD(T, g, dT=10, dg=0.001, H_thickness='thick'):
     """
     Pre-compute Taylor-Expansions for Masses and ages
     """
-    T_vals = np.array([T, T+dT, T-dT, T, T])
-    g_vals = np.array([g, g, g, g+dg, g-dg])
+    T_vals = np.array([T, T+dT, T-dT, T,    T   ])
+    g_vals = np.array([g, g,    g,    g+dg, g-dg])
 
-    M_vals = M_from_Teff_logg(T_vals, g_vals, thickness)
+    M_vals = M_from_Teff_logg(T_vals, g_vals, H_thickness)
     M, M_p_dT , M_m_dT , M_p_dg , M_m_dg = M_vals
     dM_dT = (M_p_dT - M_m_dT)/(2*dT)
     dM_dg = (M_p_dg - M_m_dg)/(2*dg)
     Taylor_M = M, dM_dT, dM_dg
 
-    tau_vals = tau_from_Teff_logg(T_vals, g_vals, thickness)
+    tau_vals = tau_from_Teff_logg(T_vals, g_vals, H_thickness)
     tau, tau_p_dT, tau_m_dT, tau_p_dg, tau_m_dg = tau_vals
     dtau_dT = (tau_p_dT - tau_m_dT)/(2*dT)
     dtau_dg = (tau_p_dg - tau_m_dg)/(2*dg)
