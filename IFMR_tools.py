@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 M_init, t_pre = np.loadtxt("MESA_lifetime.dat", unpack=True, skiprows=1)
 t_pre /= 1e9 #to Gyr
 log_tau_fun = interp1d(np.log(M_init), np.log(t_pre), kind='linear', \
-    assume_sorted=True, copy=False, bounds_error=False)
+    assume_sorted=True, copy=False, bounds_error=False, fill_value='extrapolate')
 
 def MSLT(Mi):
     """
