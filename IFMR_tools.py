@@ -83,12 +83,12 @@ class IFMR_cls(interp1d):
         """
         return 1-self.Mf_Mi
 
-    def draw_Mi_samples(self, vecM, covM, N_MARGINALISE):
+    def draw_Mi_samples(self, vecM, covM, N_samples):
         """
         Using central values for final masses and the joint covariance matrix
         calculate initial masses and the IFMR jacobian using an IFMR
         """
-        Mf12 = np.random.multivariate_normal(vecM, covM, N_MARGINALISE)
+        Mf12 = np.random.multivariate_normal(vecM, covM, N_samples)
         ok = (Mf12 > self.y.min()) & (Mf12 < self.y.max()) #reject samples outside of IFMR
         ok = np.all(ok, axis=1)
         Mf12 = Mf12[ok,:]
