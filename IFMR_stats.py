@@ -12,7 +12,7 @@ from misc import is_sorted
 
 MONOTONIC_IFMR = True
 MONOTONIC_MASS_LOSS = False
-MCH_PRIOR = True
+MCH_PRIOR = False
 STRICT_MASS_LOSS = True
 N_MARGINALISE = 10000
 
@@ -35,7 +35,7 @@ def loglike_Mi12(Mi12, vec, cov, IFMR, scale_outlier=None):
         cov_[2,2] += scale_outlier**2
     return stats.multivariate_normal.logpdf(X.T, mean=vec, cov=cov_)
 
-def loglike_Mi12_mixture(Mi12, vec, cov, IFMR, P_outlier, scale_outlier, separate=False):
+def loglike_Mi12_mixture(Mi12, vec, cov, IFMR, P_outlier, scale_outlier, return_logL_coeval=False):
     """
     Computes the likelihood of an IFMR and initial masses for one DWD with
     measured final masses and difference in WD cooling ages (and their
@@ -57,9 +57,11 @@ def loglike_Mi12_mixture(Mi12, vec, cov, IFMR, P_outlier, scale_outlier, separat
 
     logL_coeval += log1p(-P_outlier)
     logL_outlier += log(P_outlier)
-    if separate:
-        return logL_coeval, logL_outlier
-    return np.logaddexp(logL_coeval, logL_outlier)
+    logL_total = np.logaddexp(logL_coeval, logL_outlier)
+
+    if return_logL_coeval:
+        return logL_total, logL_coeval
+    return logL_total
 
 @numba.vectorize
 def logprior_Mi12(Mi1, Mi2):
@@ -71,7 +73,7 @@ def logprior_Mi12(Mi1, Mi2):
         return -np.inf
     return -2.3*log(Mi1*Mi2) #Kroupa IMF for m>0.5Msun
 
-def loglike_DWD(params, DWD, IFMR, outliers=False):
+def loglike_DWD(params, DWD, IFMR, outliers=False, return_Pcoeval=False):
     """
     log of marginal distribution:
     P(DWD | IFMR, theta) = \\iint P(Mi1, Mi2, DWD | IFMR, theta) dMi1 dMi2
@@ -98,6 +100,13 @@ def loglike_DWD(params, DWD, IFMR, outliers=False):
         jac1, jac2 = 1, 1
 
     #importance sampling
+    if outliers and return_Pcoeval:
+        log_like = loglike_Mi12_(Mi12, DWD.vecMdtau, covMdtau, IFMR, \
+            return_logL_coeval=True)
+        log_integrand = logprior_Mi12(*Mi12)[np.newaxis,:] + np.array(log_like) \
+        + log_weights[np.newaxis,:]
+        return logsumexp(log_integrand, axis=1, b=np.abs(jac1*jac2)) - log(N_MARGINALISE)
+
     log_like = loglike_Mi12_(Mi12, DWD.vecMdtau, covMdtau, IFMR)
     log_integrand = logprior_Mi12(*Mi12) + log_like + log_weights
     return logsumexp(log_integrand, b=np.abs(jac1*jac2)) - log(N_MARGINALISE)
@@ -156,19 +165,18 @@ def logprior_DWDs(params, IFMR, outliers=False):
 
 def setup_params_IFMR(all_params, ifmr_x, outliers=False):
     """
-    Takes a full array of parameters, and removes those corresponding
-    to IFMR y-values, instead returning a reduced set of parameters
+    Splits up a full array of parameters, returning a reduced set of parameters
     and an IFMR object.
     """
     params, ifmr_y = np.split(all_params, [4 if outliers else 2])
     return params, IFMR_cls(ifmr_x, ifmr_y)
 
-def logpost_DWD(all_params, DWD, ifmr_x):
+def logpost_DWD(all_params, DWD, ifmr_x, Teff_err=0.01, logg_err=0.01):
     """
     Test posterior for fitting a single DWD only
     """
     Mi12, IFMR = setup_params_IFMR(all_params, ifmr_x)
-    covMdtau = DWD.covMdtau_systematics(0.01, 0.01)
+    covMdtau = DWD.covMdtau_systematics(Teff_err, logg_err)
     if not np.isfinite(lp := logprior_DWD(Mi12, IFMR)):
         return -np.inf
     if not np.isfinite(ll := loglike_Mi12(Mi12, DWD.vecMdtau, covMdtau, IFMR)):
@@ -177,7 +185,7 @@ def logpost_DWD(all_params, DWD, ifmr_x):
 
 def logpost_DWDs(all_params, DWDs, ifmr_x, outliers=False):
     """
-    Posterior distribution for fitting IFMR to all DWDs
+    Posterior distribution for fitting an IFMR to a list of DWDs
     """
     params, IFMR = setup_params_IFMR(all_params, ifmr_x, outliers)
     if not np.isfinite(lp := logprior_DWDs(params, IFMR, outliers)):
