@@ -85,7 +85,7 @@ def load_DWDs(fname="DWDs_Teffs_loggs.pkl", use_set=None, exclude_set=None):
     if use_set is not None and exclude_set is not None:
         raise ValueError("Only one of use_set and exclude_set can be used")
 
-    with open(fname, 'rb') as F:
+    with open(f"data/{fname}", 'rb') as F:
         DWD_dict = pickle.load(F)
 
     if use_set is not None:
