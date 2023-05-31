@@ -1,18 +1,14 @@
 #!/usr/bin/env python
-import pickle
 import numpy as np
 import corner
 import matplotlib.pyplot as plt
-from DWD_class import load_DWDs
-from IFMR_stats import MSLT, loglike_Mi12_mixture
-from IFMR_tools import IFMR_cls
 from misc import load_fitted_IFMR
 
 BURN = -1000
-PLOT_CHAINS = True
+PLOT_CHAINS = False
 PLOT_CORNER = True
+CORNER_HYPER = True
 PLOT_IFMR = True
-PLOT_TOTAL_AGES = False
 OUTLIERS = True
 SIMULATED = False
 
@@ -21,8 +17,9 @@ if OUTLIERS and SIMULATED:
         SIGMA_OUTLIER, P_outlier_true
     params_true = [P_outlier_true, SIGMA_OUTLIER, TEFF_ERR, LOGG_ERR, *IFMR_true.y]
 
-#ifmr_x, chain, lnp = load_fitted_IFMR("IFMR_MCMC_outliers_230511_extend01")
-ifmr_x, chain, lnp = load_fitted_IFMR("IFMR_MCMC_outliers_monoML_230519")
+ifmr_x, chain, lnp = load_fitted_IFMR("IFMR_MCMC_outliers_230511_extend01")
+#ifmr_x, chain, lnp = load_fitted_IFMR("IFMR_MCMC_outliers_monoML_230519")
+#ifmr_x, chain, lnp = load_fitted_IFMR("IFMR_MCMC_outliers_Mch_230522")
 
 final = chain[:,BURN::5,:].reshape((-1, chain.shape[-1]))
 best_coords = np.where(lnp == lnp.max())
@@ -62,7 +59,7 @@ def lnprob_figure(lnp, Nwalkers):
     plt.show()
 
 def IFMR_figure(final):
-    final_ = final[:,-len(ifmr_x):]
+    final_ = final[:10000,-len(ifmr_x):]
     best_ = best[-len(ifmr_x):]
 
     plt.figure(figsize=(12, 6))
@@ -104,57 +101,6 @@ def IFMR_figure(final):
     plt.savefig("IFMR.png", dpi=200)
     plt.show()
 
-def total_ages_figure(final, DWD):
-    plt.figure(DWD.name, figsize=(6, 6))
-    plt.plot([0,20], [0,20], 'k:')
-    P_coeval = []
-    for params in final:
-        if OUTLIERS:
-            P_outlier, scale_outlier, Teff_err, logg_err, *ifmr_y = params
-        else:
-            Teff_err, logg_err, *ifmr_y = params
-        IFMR = IFMR_cls(ifmr_x, ifmr_y)
-        Mf1, Mf2, tau1, tau2 = DWD.Mtau_samples(Teff_err, logg_err)
-        if not all(IFMR.y[0] < Mf < IFMR.y[-1] for Mf in (Mf1, Mf2)):
-            continue
-        Mi1, Mi2 = Mi12 = IFMR.inv([Mf1, Mf2])
-
-        if OUTLIERS:
-            if not all(0.6 < Mi < 8 for Mi in (Mi1, Mi2)):
-                P_i = 0
-            else:
-                covMdtau = DWD.covMdtau_systematics(Teff_err, logg_err)
-                logL_coeval, logL_outlier = loglike_Mi12_mixture(Mi12, \
-                    DWD.vecMdtau, covMdtau, IFMR, P_outlier, scale_outlier, \
-                    separate=True)
-                logP_i = logL_coeval - np.logaddexp(logL_coeval, logL_outlier)
-                P_i = float(np.exp(logP_i))
-            P_coeval.append(P_i)
-
-        t1, t2 = MSLT(Mi1), MSLT(Mi2)
-        if OUTLIERS:
-            plt.scatter(t1+tau1, t2+tau2, s=1, c=P_i, vmin=0, vmax=1)
-        else:
-            plt.plot(t1+tau1, t2+tau2, 'C0.', ms=1)
-
-    P_coeval = np.array(P_coeval)
-    print(f"{DWD.name}, {np.mean(P_coeval):.3f}, {np.median(P_coeval):.3f}")
-
-    plt.loglog()
-    plt.xlim(0.2, 20)
-    plt.ylim(0.2, 20)
-    tick_labels = [0.2, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0]
-    plt.xticks(tick_labels, tick_labels)
-    plt.yticks(tick_labels, tick_labels)
-    plt.xlabel("t_tot1 [Gyr]")
-    plt.ylabel("t_tot2 [Gyr]")
-    if OUTLIERS:
-        plt.title("$P_\mathrm{{coeval}}$ = {:.3f}".format(np.mean(P_coeval)))
-    plt.tight_layout()
-    plt.savefig(f"age_plots/{DWD.name}.png", dpi=200)
-    plt.close()
-    #plt.show()
-
 if __name__ == "__main__":
     for idim, label in enumerate(labels):
         pcs = [np.percentile(final[:,idim], pc) for pc in (16, 50, 84)]
@@ -166,25 +112,13 @@ if __name__ == "__main__":
         #lnprob_figure(lnp, Nwalkers)
 
     if PLOT_CORNER:
-        #data = chain[:,BURN::1,:]
-        #data = data.reshape((data.shape[0]*data.shape[1], data.shape[2]))
-        #corner.corner(data, smooth1d=True, labels=labels, truths=best, \
-        #    quantiles=[0.16, 0.50, 0.84])
-        data = chain[:,BURN::1,:4]
+        data = chain[:,BURN::1,:4] if CORNER_HYPER else chain[:,BURN::1,:]
+        labels_ = labels[:4] if CORNER_HYPER else labels
         data = data.reshape((data.shape[0]*data.shape[1], data.shape[2]))
-        corner.corner(data, bins=50, labels=labels[:4], quantiles=[0.16, 0.50, 0.84], \
+        corner.corner(data, bins=50, labels=labels_, quantiles=[0.16, 0.50, 0.84], \
             color='#333333')
         plt.savefig("IFMR_corner.png", dpi=200)
         plt.show()
 
     if PLOT_IFMR:
         IFMR_figure(final)
-
-    if PLOT_TOTAL_AGES:
-        if SIMULATED:
-            with open("DWDs_simulated.pkl", 'rb') as F:
-                DWDs = pickle.load(F)
-        else:
-            DWDs = load_DWDs()
-        for DWD in DWDs:
-            total_ages_figure(final, DWD)
