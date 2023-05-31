@@ -26,8 +26,6 @@ args = parser.parse_args()
 
 if not 0 < args.Mf_mean < 1.4:
     raise ValueError("Mf mean should be valid WD mass")
-if args.Mf_mean < 0:
-    raise ValueError("Mf err must be positive")
 
 ifmr_x, chain, lnp = load_fitted_IFMR(f_MCMC_out)
 final = chain[:,BURN::THIN,:].reshape((-1,chain.shape[-1]))
