@@ -18,7 +18,7 @@ N_MARGINALISE = 10000
 
 ##################################
 # constants
-log_weights_uniform = 2*log(8-0.6)
+log_weights_uniform = 2*log(8-0.5)
 
 def loglike_Mi12(Mi12, vec, cov, IFMR, scale_outlier=None):
     """
@@ -69,11 +69,11 @@ def logprior_Mi12(Mi1, Mi2):
     Priors on inital masses, i.e.
     P(Mi1, Mi2) = (M1*M2)**-2.3
     """
-    if not (0.6 < Mi1 < 8.0 and 0.6 < Mi2 < 8.0):
+    if not (0.5 < Mi1 < 8.0 and 0.5 < Mi2 < 8.0):
         return -np.inf
     return -2.3*log(Mi1*Mi2) #Kroupa IMF for m>0.5Msun
 
-def loglike_DWD(params, DWD, IFMR, outliers=False, return_Pcoeval=False):
+def loglike_DWD(params, DWD, IFMR, outliers=False, return_logL_coeval=False):
     """
     log of marginal distribution:
     P(DWD | IFMR, theta) = \\iint P(Mi1, Mi2, DWD | IFMR, theta) dMi1 dMi2
@@ -95,12 +95,12 @@ def loglike_DWD(params, DWD, IFMR, outliers=False, return_Pcoeval=False):
         log_weights = -stats.multivariate_normal.logpdf(Mf12, mean=vecM, cov=covM)
         jac1, jac2 = IFMR.inv_grad(Mf12).T
     else:
-        Mi12 = np.random.uniform(0.6, 8, (2, N_MARGINALISE))
+        Mi12 = np.random.uniform(0.5, 8, (2, N_MARGINALISE))
         log_weights = log_weights_uniform
         jac1, jac2 = 1, 1
 
     #importance sampling
-    if outliers and return_Pcoeval:
+    if outliers and return_logL_coeval:
         log_like = loglike_Mi12_(Mi12, DWD.vecMdtau, covMdtau, IFMR, \
             return_logL_coeval=True)
         log_integrand = logprior_Mi12(*Mi12)[np.newaxis,:] + np.array(log_like) \
