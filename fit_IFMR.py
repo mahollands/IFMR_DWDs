@@ -8,8 +8,8 @@ from IFMR_stats import logpost_DWDs
 from DWDs import load_DWDs, bad_DWDs_230531 as dont_use_DWDs
 from scipy.stats import invgamma
 from misc import load_fitted_IFMR, write_fitted_IFMR
-from IFMR_config import N_CPU, Nwalkers, Nstep, f_MCMC_out, \
-    f_continue_from, S_T, S_g, ifmr_x
+from IFMR_config import ifmr_x, N_CPU, Nwalkers, Nstep, \
+    f_MCMC_out, f_continue_from, S_T, S_g, f_DWDs
 
 ###########################################################################
 
@@ -41,5 +41,5 @@ def run_MCMC(DWDs, pos0):
     write_fitted_IFMR(f_MCMC_out, ifmr_x, sampler)
 
 if __name__ == "__main__":
-    DWDs = load_DWDs(exclude_set=dont_use_DWDs)
+    DWDs = load_DWDs(f_DWDs, exclude_set=dont_use_DWDs)
     run_MCMC(DWDs, pos0)

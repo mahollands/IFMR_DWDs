@@ -1,13 +1,14 @@
 """
-Variables in this file can be edited for different choices of fit
+Variables in this file can be edited for different setup options to fit the
+IFMR. Then simply run the script 'fit_IFMR.py'.
 """
 
 #######################################
-# Intial mass grid for fitting the IFMR
+# Intial-mass grid for fitting the IFMR
 ifmr_x = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6, 8]
 
 #######################################
-# Switches for the IFMR model
+# Switches for the IFMR Bayesian model
 MONOTONIC_IFMR = True
 MONOTONIC_MASS_LOSS = False
 MCH_PRIOR = False
@@ -21,12 +22,16 @@ Nwalkers = 1000
 Nstep = 10000
 
 #####################################
-# filenames
+# input/output filenames
 f_MCMC_out = "IFMR_MCMC_230601"
-f_continue_from = "" #pick up fit from this attempt
+f_continue_from = "" #pick up fit from this attempt (ignore if empty)
 
 #####################################
 # Teff/logg systematic error sums as
 # measured from WDJ1336-1620AB
 S_T = 1.577E-4
 S_g = 2.978E-3
+
+#####################################
+# DWD selection
+f_DWDs = "DWDs_Teffs_loggs.pkl"
