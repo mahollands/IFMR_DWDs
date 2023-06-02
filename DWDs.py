@@ -76,6 +76,19 @@ class DWDcontainer:
     def M12(self):
         return self.vecMtau[:2]
 
+    @property
+    def tau1(self):
+        return self.vecMtau[3]
+
+    @property
+    def tau2(self):
+        return self.vecMtau[4]
+
+    @property
+    def dtau(self):
+        return self.vecMdtau[2]
+
+
 def load_DWDs(fname="DWDs_Teffs_loggs.pkl", use_set=None, exclude_set=None):
     """
     Read in DWDs from a pickled dictionary of Teff/logg measurements. Sets
