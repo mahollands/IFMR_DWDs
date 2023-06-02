@@ -35,3 +35,4 @@ S_g = 2.978E-3
 #####################################
 # DWD selection
 f_DWDs = "DWDs_Teffs_loggs.pkl"
+exclude_set = "230531" #See DWDs.py for choices
