@@ -5,8 +5,7 @@ from multiprocessing import Pool
 import numpy as np
 import emcee
 from IFMR_stats import logpost_DWDs
-from DWD_sets import bad_DWDs_230531 as dont_use_DWDs
-from DWD_class import load_DWDs
+from DWDs import load_DWDs, bad_DWDs_230531 as dont_use_DWDs
 from scipy.stats import invgamma
 from misc import load_fitted_IFMR, write_fitted_IFMR
 from IFMR_config import N_CPU, Nwalkers, Nstep, f_MCMC_out, \

@@ -5,7 +5,7 @@ from multiprocessing import Pool
 import numpy as np
 import emcee
 from IFMR_stats import logpost_DWD
-from DWD_class import load_DWDs
+from DWDs import load_DWDs
 
 N_CPU = 10
 Nwalkers, Nstep = 1000, 1000
