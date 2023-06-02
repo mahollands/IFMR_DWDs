@@ -59,7 +59,7 @@ else:
 t_errs = np.diff(t_pcs)
 t_str = t_fmt.format(t_pcs[1], *t_errs)
 
-print(f"Mf : {Mf_str} Msun ==> Mi : {Mi_str} Msun, MS_t = {t_str} {t_unit}")
+print(f"Mf : {Mf_str} Msun ==> Mi : {Mi_str} Msun, t_preWD = {t_str} {t_unit}")
 
 if args.show:
     plt.hist(Mi, bins=np.arange(0, 8, 0.05), density=True, histtype='step')
@@ -73,6 +73,6 @@ if args.show:
     plt.hist(t, bins=100, density=True, histtype='step')
     for t_pc in t_pcs:
         plt.axvline(t_pc, c='C1', ls=':')
-    plt.xlabel(rf"$\tau_\mathrm{{MS}}$ [{t_unit}]")
-    plt.ylabel(r"$P(\tau_\mathrm{MS})$")
+    plt.xlabel(rf"$\tau_\mathrm{{preWD}}$ [{t_unit}]")
+    plt.ylabel(r"$P(\tau_\mathrm{preWD})$")
     plt.show()

@@ -15,5 +15,5 @@ Hyper-parameters are the two initial masses for the system.
 Edit this file to fit the IFMR of your choice.
 * plot_ifmr.py: plot outputs from an MCMC run.
 * Mi_from_Mf.py: Given an Mf value and it's error, calculate Mi and its
-uncertainty as well as for the main sequence lifetime. Includes uncertainty
+uncertainty as well as for the pre-WD lifetime. Includes uncertainty
 in the IFMR itself.
