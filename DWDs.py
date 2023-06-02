@@ -109,6 +109,9 @@ def load_DWDs(fname="DWDs_Teffs_loggs.pkl", use_set=None, exclude_set=None):
 
     return DWDs
 
+##############################################################################
+# Sets of DWDs to either include of exclude from the entire list
+
 good_DWDs_220225 = {
     "runA_WDJ0855-2637AB",
     "runA_WDJ1015+0806AB",
