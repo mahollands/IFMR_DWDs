@@ -9,12 +9,8 @@ from scipy import stats
 from scipy.special import logsumexp
 from IFMR_tools import IFMR_cls, MSLT
 from misc import is_sorted
-
-MONOTONIC_IFMR = True
-MONOTONIC_MASS_LOSS = False
-MCH_PRIOR = False
-STRICT_MASS_LOSS = True
-N_MARGINALISE = 10000
+from IFMR_config import MONOTONIC_IFMR, MONOTONIC_MASS_LOSS, MCH_PRIOR, \
+    STRICT_MASS_LOSS, N_MARGINALISE, S_T, S_g
 
 ##################################
 # constants
@@ -157,8 +153,8 @@ def logprior_DWDs(params, IFMR, outliers=False):
 
     log_priors = [
         #inverse gamma on variance with Jeffrey's prior
-        -3*log(Teff_err) - 0.5/Teff_err**2 * 1.577E-4 #From WDJ1336AB
-        -3*log(logg_err) - 0.5/logg_err**2 * 2.978E-3 #From WDJ1336AB
+        -3*log(Teff_err) - 0.5/Teff_err**2 * S_T
+        -3*log(logg_err) - 0.5/logg_err**2 * S_g
     ]
 
     return sum(log_priors) + logprior_IFMR(IFMR)

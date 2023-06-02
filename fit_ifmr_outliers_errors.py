@@ -9,27 +9,22 @@ from DWD_sets import bad_DWDs_230531 as dont_use_DWDs
 from DWD_class import load_DWDs
 from scipy.stats import invgamma
 from misc import load_fitted_IFMR, write_fitted_IFMR
-
-N_CPU = 10
-Nwalkers, Nstep = 1000, 10000
-f_MCMC_out = "IFMR_MCMC_230601"
-ifmr_x = np.array([0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6, 8])
-ifmr_y_ = (1.4-0.4)/(8-0.5) * (ifmr_x-0.5) + 0.4
-
-continue_run = False
-f_continue_from = ""
+from IFMR_config import N_CPU, Nwalkers, Nstep, f_MCMC_out, \
+    f_continue_from, S_T, S_g, ifmr_x
 
 ###########################################################################
 
-if continue_run:
+if f_continue_from:
     ifmr_x, chain, _ = load_fitted_IFMR(f_continue_from)
     pos0 = chain[:,-1,:]
 else:
+    ifmr_x = np.array(ifmr_x)
+    ifmr_y_ = (1.4-0.4)/(8-0.5) * (ifmr_x-0.5) + 0.4
     pos0 = np.array([
         np.random.random(Nwalkers), #P_outlier
         np.random.rayleigh(1.0, Nwalkers), #sigma_outlier
-        np.sqrt(invgamma.rvs(a=1, scale=1.577E-4/2, size=Nwalkers)), #Teff_err
-        np.sqrt(invgamma.rvs(a=1, scale=2.978E-3/2, size=Nwalkers)), #logg_err
+        np.sqrt(invgamma.rvs(a=1, scale=S_T/2, size=Nwalkers)), #Teff_err
+        np.sqrt(invgamma.rvs(a=1, scale=S_g/2, size=Nwalkers)), #logg_err
     ] + [np.random.normal(mf, 0.01, Nwalkers) for mf in ifmr_y_] #IFMR
     ).T
 Ndim = pos0.shape[1]
