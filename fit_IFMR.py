@@ -33,7 +33,7 @@ def run_MCMC(DWDs, pos0):
 
     ##Run MCMC
     with Pool(cfg.N_CPU) as pool:
-        sampler = emcee.EnsembleSampler(cfg.Nwalkers, cfg.Ndim, logpost_DWDs, \
+        sampler = emcee.EnsembleSampler(cfg.Nwalkers, Ndim, logpost_DWDs, \
             args=(DWDs, ifmr_x, True), pool=pool)
         sampler.run_mcmc(pos0, cfg.Nstep, progress=True)
 
