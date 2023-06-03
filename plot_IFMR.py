@@ -4,10 +4,10 @@ import corner
 import matplotlib.pyplot as plt
 from misc import load_fitted_IFMR
 
-BURN = -1000
+BURN = -100
 PLOT_CHAINS = False
 PLOT_CORNER = True
-CORNER_HYPER = True
+CORNER_HYPER = False
 PLOT_IFMR = True
 OUTLIERS = True
 SIMULATED = False
@@ -17,9 +17,10 @@ if OUTLIERS and SIMULATED:
         SIGMA_OUTLIER, P_outlier_true
     params_true = [P_outlier_true, SIGMA_OUTLIER, TEFF_ERR, LOGG_ERR, *IFMR_true.y]
 
-ifmr_x, chain, lnp = load_fitted_IFMR("IFMR_MCMC_outliers_230511_extend01")
+#ifmr_x, chain, lnp = load_fitted_IFMR("IFMR_MCMC_outliers_230511_extend01")
 #ifmr_x, chain, lnp = load_fitted_IFMR("IFMR_MCMC_outliers_monoML_230519")
 #ifmr_x, chain, lnp = load_fitted_IFMR("IFMR_MCMC_outliers_Mch_230522")
+ifmr_x, chain, lnp = load_fitted_IFMR("IFMR_MCMC_nonMono_230525")
 
 final = chain[:,BURN::5,:].reshape((-1, chain.shape[-1]))
 best_coords = np.where(lnp == lnp.max())
