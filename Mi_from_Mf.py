@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from IFMR_tools import IFMR_cls, MSLT
 from misc import load_fitted_IFMR
 
-f_MCMC_out = "IFMR_MCMC_outliers_230511_extend01"
+f_MCMC_out = "IFMR_MCMC_230605"
 BURN = -100
 THIN = 5
 
