@@ -24,27 +24,27 @@ class DWDcontainer:
     def __repr__(self):
         return f"DWD(name='{self.name}', ...)"
 
-    def get_Tg_cov_systematics(self, Teff_err, logg_err):
+    def covTg_systematics(self, Teff_err, logg_err):
         """
         Add systematic uncertainties to Teff-logg covariance matrix
         """
         T1, T2, *_ = self.Tg
         err_syst = np.array([Teff_err*T1, Teff_err*T2, logg_err, logg_err])
-        return self.Tg_cov + np.diag(err_syst**2)
+        return self.covTg + np.diag(err_syst**2)
 
     def covMdtau_systematics(self, Teff_err, logg_err):
         """
         Get M1 M2 dtau covariance matrix with Teff/logg systematic errors
         """
-        Tg_cov_ = self.get_Tg_cov_systematics(Teff_err, logg_err)
-        return self.JacMdtau @ Tg_cov_ @ self.JacMdtau.T
+        covTg_ = self.covTg_systematics(Teff_err, logg_err)
+        return self.JacMdtau @ covTg_ @ self.JacMdtau.T
 
     def covMtau_systematics(self, Teff_err, logg_err):
         """
         Get M1 M2 tau1 tau2 covariance matrix with Teff/logg systematic errors
         """
-        Tg_cov_ = self.get_Tg_cov_systematics(Teff_err, logg_err)
-        return self.JacMtau @ Tg_cov_ @ self.JacMtau.T
+        covTg_ = self.covTg_systematics(Teff_err, logg_err)
+        return self.JacMtau @ covTg_ @ self.JacMtau.T
 
     def Mdtau_samples(self, Teff_err, logg_err, N_samples=1):
         """
@@ -72,7 +72,7 @@ class DWDcontainer:
         Mf12 = np.random.multivariate_normal(self.M12, covM, N_samples)
         ok = (Mf12 > IFMR.y[0]) & (Mf12 < IFMR.y[-1]) #reject samples outside of IFMR
         ok = np.all(ok, axis=1)
-        return Mf12[ok,:]
+        return Mf12[ok,:].T
 
     @property
     def M1(self):
@@ -119,7 +119,7 @@ def load_DWDs(fname, use_set=None, exclude_set=None):
         DWD_dict = {k: v for k, v in DWD_dict.items() if k in use_set}
     elif exclude_set is not None:
         DWD_dict = {k: v for k, v in DWD_dict.items() if k not in exclude_set}
-    DWDs = [DWDcontainer(name, *Tg_vec_cov) for name, Tg_vec_cov in DWD_dict.items()]
+    DWDs = [DWDcontainer(name, *data) for name, data in DWD_dict.items()]
 
     return DWDs
 
