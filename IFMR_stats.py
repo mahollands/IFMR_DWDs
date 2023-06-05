@@ -69,14 +69,13 @@ def logprior_Mi12(Mi1, Mi2):
         return -2.3*log(Mi1*Mi2) #Kroupa IMF for m>0.5Msun
     return -np.inf
 
-@numba.vectorize
-def logprior_tau12(tau1_pre, tau2_pre, tau1_c, tau2_c):
+def logprior_tau12(tau12_pre, tau12_c, tau12_cov):
     """
     Prior on total lifetime.
     """
-    if tau1_pre+tau1_c < 13.8 and tau2_pre+tau2_c < 13.8:
-        return 0
-    return -np.inf
+    tau12_total = tau12_pre + tau12_c[:,np.newaxis]
+    p = stats.multivariate_normal.cdf(-tau12_total.T, [-13.8, -13.8], tau12_cov)
+    return np.log(np.abs(p))
 
 def loglike_DWD(params, DWD, IFMR, outliers=False, return_logL_coeval=False):
     """
@@ -110,7 +109,8 @@ def loglike_DWD(params, DWD, IFMR, outliers=False, return_logL_coeval=False):
     if conf.MI_PRIOR:
         log_prior += logprior_Mi12(*Mi12)
     if conf.TAU_PRIOR:
-        log_prior += logprior_tau12(*tau12_pre, *DWD.tau12)
+        covtau = DWD.covMtau_systematics(Teff_err, logg_err)[2:,2:]
+        log_prior += logprior_tau12(tau12_pre, DWD.tau12, covtau)
 
     #importance sampling
     if outliers and return_logL_coeval:
