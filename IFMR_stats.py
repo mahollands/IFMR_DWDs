@@ -6,7 +6,7 @@ from functools import partial
 import numpy as np
 import numba
 from scipy import stats
-from scipy.special import logsumexp
+from scipy.special import logsumexp, erfc
 from IFMR_tools import IFMR_cls, MSLT
 from misc import is_sorted
 import IFMR_config as conf 
@@ -14,6 +14,7 @@ import IFMR_config as conf
 ##################################
 # constants
 log_weights_uniform = 2*log(8-0.5)
+t_universe = 13.8
 
 def loglike_Mf12(Mf12, tau12_pre, Mdtau, covMdtau, IFMR, scale_outlier=None):
     """
@@ -69,11 +70,17 @@ def logprior_Mi12(Mi1, Mi2):
 
 def logprior_tau12(tau12_pre, tau12_c, tau12_cov):
     """
-    Prior on total lifetime.
+    Prior on total lifetime. Doesn't take into account covariance for
+    speed reasons.
     """
-    tau12_total = tau12_pre + tau12_c[:,np.newaxis]
-    p = stats.multivariate_normal.cdf(-tau12_total.T, [-13.8, -13.8], tau12_cov)
-    return np.log(np.abs(p))
+    tau1pre, tau2pre = tau12_pre
+    tau1_c, tau2_c = tau12_c
+    tau1_total = tau1pre + tau1_c
+    tau2_total = tau2pre + tau2_c
+    tau1v, tau2v = np.diag(tau12_cov)
+    p1 = erfc((tau1_total-t_universe)/np.sqrt(2*tau1v))
+    p2 = erfc((tau2_total-t_universe)/np.sqrt(2*tau2v))
+    return np.log(np.abs(p1*p2))
 
 def loglike_DWD(params, DWD, IFMR, outliers=False, return_logL_coeval=False):
     """
@@ -91,12 +98,12 @@ def loglike_DWD(params, DWD, IFMR, outliers=False, return_logL_coeval=False):
     covM = covMdtau[:2,:2]
 
     if conf.MONOTONIC_IFMR:
-        Mf12 = DWD.draw_Mi_samples(covM, IFMR, conf.N_MARGINALISE)
-        if len(Mf12) <= 1:
+        Mf12 = DWD.draw_Mf_samples(covM, IFMR, conf.N_MARGINALISE)
+        if Mf12.shape[1] <= 1:
             return -np.inf
-        log_weights = -stats.multivariate_normal.logpdf(Mf12, mean=DWD.M12, cov=covM)
+        log_weights = -stats.multivariate_normal.logpdf(Mf12.T, mean=DWD.M12, cov=covM)
         Mi12 = IFMR.inv(Mf12)
-        jac1, jac2 = IFMR.inv_grad(Mf12).T
+        jac1, jac2 = IFMR.inv_grad(Mf12)
     else:
         Mi12 = np.random.uniform(0.5, 8, (2, conf.N_MARGINALISE))
         log_weights = log_weights_uniform
@@ -161,7 +168,7 @@ def logprior_DWDs(params, IFMR, outliers=False):
     """
     if outliers:
         P_outlier, scale_outlier, Teff_err, logg_err = params
-        if not 0 < P_outlier < 1 or not 0 < scale_outlier < 13.8:
+        if not 0 < P_outlier < 1 or not 0 < scale_outlier < t_universe:
             return -np.inf
     else:
         Teff_err, logg_err = params
