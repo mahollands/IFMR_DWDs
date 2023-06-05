@@ -78,11 +78,15 @@ class DWDcontainer:
 
     @property
     def tau1(self):
-        return self.vecMtau[3]
+        return self.vecMtau[2]
 
     @property
     def tau2(self):
-        return self.vecMtau[4]
+        return self.vecMtau[3]
+
+    @property
+    def tau12(self):
+        return self.vecMtau[2:]
 
     @property
     def dtau(self):
