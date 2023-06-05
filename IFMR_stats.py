@@ -15,7 +15,7 @@ import IFMR_config as conf
 # constants
 log_weights_uniform = 2*log(8-0.5)
 
-def loglike_Mi12(Mi12, vec, cov, IFMR, scale_outlier=None):
+def loglike_Mi12(Mi12, tau12_pre, vec, cov, IFMR, scale_outlier=None):
     """
     Computes the likelihood of an IFMR and initial masses for one DWD with
     measured final masses and difference in WD cooling ages (and their
@@ -23,21 +23,22 @@ def loglike_Mi12(Mi12, vec, cov, IFMR, scale_outlier=None):
     distributions.
     """
     Mf12 = IFMR(Mi12)
-    tau1_ms, tau2_ms = MSLT(Mi12)
-    dtau_ms = tau1_ms-tau2_ms
-    X, cov_ = np.vstack([Mf12, -dtau_ms]), np.copy(cov)
+    tau1_pre, tau2_pre = tau12_pre
+    dtau_pre = tau1_pre-tau2_pre
+    X, cov_ = np.vstack([Mf12, -dtau_pre]), np.copy(cov)
     if scale_outlier is not None:
         cov_[2,2] += scale_outlier**2
     return stats.multivariate_normal.logpdf(X.T, mean=vec, cov=cov_)
 
-def loglike_Mi12_mixture(Mi12, vec, cov, IFMR, P_outlier, scale_outlier, return_logL_coeval=False):
+def loglike_Mi12_mixture(Mi12, tau12_pre, vec, cov, IFMR, P_outlier, \
+    scale_outlier, return_logL_coeval=False):
     """
     Computes the likelihood of an IFMR and initial masses for one DWD with
     measured final masses and difference in WD cooling ages (and their
     covariance), and under the assumption of a fraction of systems being
     outliers drawn from a broader dtau_c distribution.
     """
-    args = Mi12, vec, cov, IFMR
+    args = Mi12, tau12_pre, vec, cov, IFMR
     logL_coeval  = loglike_Mi12(*args)
     logL_outlier = loglike_Mi12(*args, scale_outlier=scale_outlier)
 
@@ -64,9 +65,18 @@ def logprior_Mi12(Mi1, Mi2):
     Priors on inital masses, i.e.
     P(Mi1, Mi2) = (M1*M2)**-2.3
     """
-    if not (0.5 < Mi1 < 8.0 and 0.5 < Mi2 < 8.0):
-        return -np.inf
-    return -2.3*log(Mi1*Mi2) #Kroupa IMF for m>0.5Msun
+    if 0.5 < Mi1 < 8.0 and 0.5 < Mi2 < 8.0:
+        return -2.3*log(Mi1*Mi2) #Kroupa IMF for m>0.5Msun
+    return -np.inf
+
+@numba.vectorize
+def logprior_tau12(tau1_pre, tau2_pre, tau1_c, tau2_c):
+    """
+    Prior on total lifetime.
+    """
+    if tau1_pre+tau1_c < 13.8 and tau2_pre+tau2_c < 13.8:
+        return 0
+    return -np.inf
 
 def loglike_DWD(params, DWD, IFMR, outliers=False, return_logL_coeval=False):
     """
@@ -94,16 +104,25 @@ def loglike_DWD(params, DWD, IFMR, outliers=False, return_logL_coeval=False):
         log_weights = log_weights_uniform
         jac1, jac2 = 1, 1
 
+    #priors
+    tau12_pre = MSLT(Mi12)
+    log_prior = np.zeros(Mi12.shape[1])
+    if conf.MI_PRIOR:
+        log_prior += logprior_Mi12(*Mi12)
+    if conf.TAU_PRIOR:
+        log_prior += logprior_tau12(*tau12_pre, *DWD.tau12)
+
     #importance sampling
     if outliers and return_logL_coeval:
-        log_like = loglike_Mi12_(Mi12, DWD.vecMdtau, covMdtau, IFMR, \
+        log_like = loglike_Mi12_(Mi12, tau12_pre, DWD.vecMdtau, covMdtau, IFMR, \
             return_logL_coeval=True)
-        log_integrand = logprior_Mi12(*Mi12)[np.newaxis,:] + np.array(log_like) \
+        log_integrand = log_prior[np.newaxis,:] + np.array(log_like) \
         + log_weights[np.newaxis,:]
-        return logsumexp(log_integrand, axis=1, b=np.abs(jac1*jac2)) - log(conf.N_MARGINALISE)
+        return logsumexp(log_integrand, axis=1, b=np.abs(jac1*jac2)) \
+            - log(conf.N_MARGINALISE)
 
-    log_like = loglike_Mi12_(Mi12, DWD.vecMdtau, covMdtau, IFMR)
-    log_integrand = logprior_Mi12(*Mi12) + log_like + log_weights
+    log_like = loglike_Mi12_(Mi12, tau12_pre, DWD.vecMdtau, covMdtau, IFMR)
+    log_integrand = log_prior + log_like + log_weights
     return logsumexp(log_integrand, b=np.abs(jac1*jac2)) - log(conf.N_MARGINALISE)
 
 def loglike_DWDs(params, DWDs, IFMR, outliers=False):
