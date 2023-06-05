@@ -9,8 +9,7 @@ from scipy import stats
 from scipy.special import logsumexp
 from IFMR_tools import IFMR_cls, MSLT
 from misc import is_sorted
-from IFMR_config import MONOTONIC_IFMR, MONOTONIC_MASS_LOSS, MCH_PRIOR, \
-    STRICT_MASS_LOSS, N_MARGINALISE, S_T, S_g
+import IFMR_config as conf 
 
 ##################################
 # constants
@@ -84,14 +83,14 @@ def loglike_DWD(params, DWD, IFMR, outliers=False, return_logL_coeval=False):
     covMdtau = DWD.covMdtau_systematics(Teff_err, logg_err)
     vecM, covM = DWD.vecMdtau[:2], covMdtau[:2,:2]
 
-    if MONOTONIC_IFMR:
-        Mi12, Mf12 = IFMR.draw_Mi_samples(vecM, covM, N_MARGINALISE)
+    if conf.MONOTONIC_IFMR:
+        Mi12, Mf12 = IFMR.draw_Mi_samples(vecM, covM, conf.N_MARGINALISE)
         if len(Mf12) <= 1:
             return -np.inf
         log_weights = -stats.multivariate_normal.logpdf(Mf12, mean=vecM, cov=covM)
         jac1, jac2 = IFMR.inv_grad(Mf12).T
     else:
-        Mi12 = np.random.uniform(0.5, 8, (2, N_MARGINALISE))
+        Mi12 = np.random.uniform(0.5, 8, (2, conf.N_MARGINALISE))
         log_weights = log_weights_uniform
         jac1, jac2 = 1, 1
 
@@ -101,11 +100,11 @@ def loglike_DWD(params, DWD, IFMR, outliers=False, return_logL_coeval=False):
             return_logL_coeval=True)
         log_integrand = logprior_Mi12(*Mi12)[np.newaxis,:] + np.array(log_like) \
         + log_weights[np.newaxis,:]
-        return logsumexp(log_integrand, axis=1, b=np.abs(jac1*jac2)) - log(N_MARGINALISE)
+        return logsumexp(log_integrand, axis=1, b=np.abs(jac1*jac2)) - log(conf.N_MARGINALISE)
 
     log_like = loglike_Mi12_(Mi12, DWD.vecMdtau, covMdtau, IFMR)
     log_integrand = logprior_Mi12(*Mi12) + log_like + log_weights
-    return logsumexp(log_integrand, b=np.abs(jac1*jac2)) - log(N_MARGINALISE)
+    return logsumexp(log_integrand, b=np.abs(jac1*jac2)) - log(conf.N_MARGINALISE)
 
 def loglike_DWDs(params, DWDs, IFMR, outliers=False):
     """
@@ -117,16 +116,16 @@ def logprior_IFMR(IFMR):
     """
     Prior on the IFMR only. Specifically this amounts to cuts on the 
     """
-    if STRICT_MASS_LOSS and not all(0 < q < 1 for q in IFMR.mass_loss):
+    if conf.STRICT_MASS_LOSS and not all(0 < q < 1 for q in IFMR.mass_loss):
         return -np.inf
 
-    if MCH_PRIOR and np.any(IFMR.y > 1.4):
+    if conf.MCH_PRIOR and np.any(IFMR.y > 1.4):
         return -np.inf
 
-    if MONOTONIC_IFMR and not is_sorted(IFMR.y):
+    if conf.MONOTONIC_IFMR and not is_sorted(IFMR.y):
         return -np.inf
 
-    if MONOTONIC_MASS_LOSS and not is_sorted(IFMR.mass_loss):
+    if conf.MONOTONIC_MASS_LOSS and not is_sorted(IFMR.mass_loss):
         return -np.inf
 
     return 0
@@ -153,8 +152,8 @@ def logprior_DWDs(params, IFMR, outliers=False):
 
     log_priors = [
         #inverse gamma on variance with Jeffrey's prior
-        -3*log(Teff_err) - 0.5/Teff_err**2 * S_T
-        -3*log(logg_err) - 0.5/logg_err**2 * S_g
+        -3*log(Teff_err) - 0.5/Teff_err**2 * conf.S_T
+        -3*log(logg_err) - 0.5/logg_err**2 * conf.S_g
     ]
 
     return sum(log_priors) + logprior_IFMR(IFMR)
