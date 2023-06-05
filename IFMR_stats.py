@@ -15,22 +15,20 @@ import IFMR_config as conf
 # constants
 log_weights_uniform = 2*log(8-0.5)
 
-def loglike_Mi12(Mi12, tau12_pre, vec, cov, IFMR, scale_outlier=None):
+def loglike_Mf12(Mf12, tau12_pre, Mdtau, covMdtau, IFMR, scale_outlier=None):
     """
     Computes the likelihood of an IFMR and initial masses for one DWD with
     measured final masses and difference in WD cooling ages (and their
     covariance). This is optionally computed for either the coeval or outlier
     distributions.
     """
-    Mf12 = IFMR(Mi12)
     tau1_pre, tau2_pre = tau12_pre
-    dtau_pre = tau1_pre-tau2_pre
-    X, cov_ = np.vstack([Mf12, -dtau_pre]), np.copy(cov)
+    X, cov_ = np.vstack([Mf12, tau2_pre-tau1_pre]), np.copy(covMdtau)
     if scale_outlier is not None:
         cov_[2,2] += scale_outlier**2
-    return stats.multivariate_normal.logpdf(X.T, mean=vec, cov=cov_)
+    return stats.multivariate_normal.logpdf(X.T, mean=Mdtau, cov=cov_)
 
-def loglike_Mi12_mixture(Mi12, tau12_pre, vec, cov, IFMR, P_outlier, \
+def loglike_Mf12_mixture(Mf12, tau12_pre, Mdtau, covMdtau, IFMR, P_outlier, \
     scale_outlier, return_logL_coeval=False):
     """
     Computes the likelihood of an IFMR and initial masses for one DWD with
@@ -38,9 +36,9 @@ def loglike_Mi12_mixture(Mi12, tau12_pre, vec, cov, IFMR, P_outlier, \
     covariance), and under the assumption of a fraction of systems being
     outliers drawn from a broader dtau_c distribution.
     """
-    args = Mi12, tau12_pre, vec, cov, IFMR
-    logL_coeval  = loglike_Mi12(*args)
-    logL_outlier = loglike_Mi12(*args, scale_outlier=scale_outlier)
+    args = Mf12, tau12_pre, Mdtau, covMdtau, IFMR
+    logL_coeval  = loglike_Mf12(*args)
+    logL_outlier = loglike_Mf12(*args, scale_outlier=scale_outlier)
 
     if isinstance(logL_coeval, np.ndarray):
         logL_coeval[np.isnan(logL_coeval)] = -np.inf
@@ -84,23 +82,25 @@ def loglike_DWD(params, DWD, IFMR, outliers=False, return_logL_coeval=False):
     """
     if outliers:
         P_outlier, scale_outlier, Teff_err, logg_err = params
-        loglike_Mi12_ = partial(loglike_Mi12_mixture, \
+        loglike_Mf12_ = partial(loglike_Mf12_mixture, \
             P_outlier=P_outlier, scale_outlier=scale_outlier)
     else:
         Teff_err, logg_err = params
-        loglike_Mi12_ = loglike_Mi12
+        loglike_Mf12_ = loglike_Mf12
     covMdtau = DWD.covMdtau_systematics(Teff_err, logg_err)
-    vecM, covM = DWD.vecMdtau[:2], covMdtau[:2,:2]
+    covM = covMdtau[:2,:2]
 
     if conf.MONOTONIC_IFMR:
-        Mi12, Mf12 = IFMR.draw_Mi_samples(vecM, covM, conf.N_MARGINALISE)
+        Mf12 = DWD.draw_Mi_samples(covM, IFMR, conf.N_MARGINALISE)
         if len(Mf12) <= 1:
             return -np.inf
-        log_weights = -stats.multivariate_normal.logpdf(Mf12, mean=vecM, cov=covM)
+        log_weights = -stats.multivariate_normal.logpdf(Mf12, mean=DWD.M12, cov=covM)
+        Mi12 = IFMR.inv(Mf12)
         jac1, jac2 = IFMR.inv_grad(Mf12).T
     else:
         Mi12 = np.random.uniform(0.5, 8, (2, conf.N_MARGINALISE))
         log_weights = log_weights_uniform
+        Mf12 = IFMR(Mi12)
         jac1, jac2 = 1, 1
 
     #priors
@@ -114,14 +114,14 @@ def loglike_DWD(params, DWD, IFMR, outliers=False, return_logL_coeval=False):
 
     #importance sampling
     if outliers and return_logL_coeval:
-        log_like = loglike_Mi12_(Mi12, tau12_pre, DWD.vecMdtau, covMdtau, IFMR, \
+        log_like = loglike_Mf12_(Mf12, tau12_pre, DWD.Mdtau, covMdtau, IFMR, \
             return_logL_coeval=True)
         log_integrand = log_prior[np.newaxis,:] + np.array(log_like) \
         + log_weights[np.newaxis,:]
         return logsumexp(log_integrand, axis=1, b=np.abs(jac1*jac2)) \
             - log(conf.N_MARGINALISE)
 
-    log_like = loglike_Mi12_(Mi12, tau12_pre, DWD.vecMdtau, covMdtau, IFMR)
+    log_like = loglike_Mf12_(Mf12, tau12_pre, DWD.Mdtau, covMdtau, IFMR)
     log_integrand = log_prior + log_like + log_weights
     return logsumexp(log_integrand, b=np.abs(jac1*jac2)) - log(conf.N_MARGINALISE)
 
@@ -190,10 +190,11 @@ def logpost_DWD(all_params, DWD, ifmr_x, Teff_err=0.01, logg_err=0.01):
     Test posterior for fitting a single DWD only
     """
     Mi12, IFMR = setup_params_IFMR(all_params, ifmr_x)
+    Mf12 = IFMR(Mi12)
     covMdtau = DWD.covMdtau_systematics(Teff_err, logg_err)
     if not np.isfinite(lp := logprior_DWD(Mi12, IFMR)):
         return -np.inf
-    if not np.isfinite(ll := loglike_Mi12(Mi12, DWD.vecMdtau, covMdtau, IFMR)):
+    if not np.isfinite(ll := loglike_Mf12(Mf12, DWD.Mdtau, covMdtau, IFMR)):
         return -np.inf
     return lp + ll
 

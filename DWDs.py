@@ -11,13 +11,13 @@ class DWDcontainer:
     measurement errors, the corresponding, masses/cooling ages, and their Jacobian
     matrix for adding systematic errors to the Teff/logg
     """
-    def __init__(self, name, Tg_vec, Tg_cov, TgMtau_expansion):
+    def __init__(self, name, Tg, covTg, TgMtau_expansion):
         self.name = name
-        self.Tg_vec = Tg_vec
-        self.Tg_cov = Tg_cov
-        vecMdtau, vecMtau, JacMdtau, JacMtau = TgMtau_expansion
-        self.vecMdtau = vecMdtau
-        self.vecMtau = vecMtau
+        self.Tg = Tg
+        self.covTg = covTg
+        Mdtau, Mtau, JacMdtau, JacMtau = TgMtau_expansion
+        self.Mdtau = Mdtau
+        self.Mtau = Mtau
         self.JacMdtau = JacMdtau
         self.JacMtau = JacMtau
 
@@ -28,7 +28,7 @@ class DWDcontainer:
         """
         Add systematic uncertainties to Teff-logg covariance matrix
         """
-        T1, T2, *_ = self.Tg_vec
+        T1, T2, *_ = self.Tg
         err_syst = np.array([Teff_err*T1, Teff_err*T2, logg_err, logg_err])
         return self.Tg_cov + np.diag(err_syst**2)
 
@@ -52,8 +52,8 @@ class DWDcontainer:
         """
         covMdtau = self.covMdtau_systematics(Teff_err, logg_err)
         if N_samples == 1:
-            return np.random.multivariate_normal(self.vecMdtau, covMdtau)
-        return np.random.multivariate_normal(self.vecMdtau, covMdtau, N_samples).T
+            return np.random.multivariate_normal(self.Mdtau, covMdtau)
+        return np.random.multivariate_normal(self.Mdtau, covMdtau, N_samples).T
 
     def Mtau_samples(self, Teff_err, logg_err, N_samples=1):
         """
@@ -61,36 +61,46 @@ class DWDcontainer:
         """
         covMtau = self.covMtau_systematics(Teff_err, logg_err)
         if N_samples == 1:
-            return np.random.multivariate_normal(self.vecMtau, covMtau)
-        return np.random.multivariate_normal(self.vecMtau, covMtau, N_samples).T
+            return np.random.multivariate_normal(self.Mtau, covMtau)
+        return np.random.multivariate_normal(self.Mtau, covMtau, N_samples).T
+
+    def draw_Mf_samples(self, covM, IFMR, N_samples):
+        """
+        Using central values for final masses and the joint covariance matrix
+        calculate initial masses and the IFMR jacobian using an IFMR
+        """
+        Mf12 = np.random.multivariate_normal(self.M12, covM, N_samples)
+        ok = (Mf12 > IFMR.y[0]) & (Mf12 < IFMR.y[-1]) #reject samples outside of IFMR
+        ok = np.all(ok, axis=1)
+        return Mf12[ok,:]
 
     @property
     def M1(self):
-        return self.vecMtau[0]
+        return self.Mtau[0]
 
     @property
     def M2(self):
-        return self.vecMtau[1]
+        return self.Mtau[1]
 
     @property
     def M12(self):
-        return self.vecMtau[:2]
+        return self.Mtau[:2]
 
     @property
     def tau1(self):
-        return self.vecMtau[2]
+        return self.Mtau[2]
 
     @property
     def tau2(self):
-        return self.vecMtau[3]
+        return self.Mtau[3]
 
     @property
     def tau12(self):
-        return self.vecMtau[2:]
+        return self.Mtau[2:]
 
     @property
     def dtau(self):
-        return self.vecMdtau[2]
+        return self.Mdtau[2]
 
 
 def load_DWDs(fname, use_set=None, exclude_set=None):
