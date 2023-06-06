@@ -73,13 +73,9 @@ def logprior_tau12(tau12_pre, tau12_c, tau12_cov):
     Prior on total lifetime. Doesn't take into account covariance for
     speed reasons.
     """
-    tau1pre, tau2pre = tau12_pre
-    tau1_c, tau2_c = tau12_c
-    tau1_total = tau1pre + tau1_c
-    tau2_total = tau2pre + tau2_c
-    tau1v, tau2v = np.diag(tau12_cov)
-    p1 = erfc((tau1_total-t_universe)/np.sqrt(2*tau1v))
-    p2 = erfc((tau2_total-t_universe)/np.sqrt(2*tau2v))
+    tau12_total = tau12_pre + tau12_c[:,np.newaxis]
+    tau12v = np.diag(tau12_cov)[:,np.newaxis]
+    p1, p2 = erfc((tau12_total-t_universe)/np.sqrt(2*tau12v))
     return np.log(np.abs(p1*p2))
 
 def loglike_DWD(params, DWD, IFMR, outliers=False, return_logL_coeval=False):
