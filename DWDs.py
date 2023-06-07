@@ -103,7 +103,7 @@ class DWDcontainer:
         return self.Mdtau[2]
 
 
-def load_DWDs(fname, use_set=None, exclude_set=None):
+def load_DWDs(fname="DWDs_Teffs_loggs.pkl", use_set=None, exclude_set=None):
     """
     Read in DWDs from a pickled dictionary of Teff/logg measurements. Sets
     of specific DWD names to use or exclude can be provided.
