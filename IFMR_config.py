@@ -15,17 +15,17 @@ MCH_PRIOR = False
 STRICT_MASS_LOSS = True
 MI_PRIOR = True
 TAU_PRIOR = True
-N_MARGINALISE = 1600
+N_MARGINALISE = 10000
 
 ######################################
 # MCMC parameters
 N_CPU = 10
-Nwalkers = 100
+Nwalkers = 1000
 Nstep = 10000
 
 #####################################
 # input/output filenames
-f_MCMC_out = "IFMR_MCMC_230605"
+f_MCMC_out = "IFMR_fit"
 f_continue_from = "" #pick up fit from this attempt (ignore if empty)
 
 #####################################
