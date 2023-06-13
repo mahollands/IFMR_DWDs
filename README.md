@@ -13,10 +13,15 @@ for outliers, and Teff/logg systematic terms.
 Hyper-parameters are the two initial masses for the system.
 * IFMR_config.py: Contains all required variables needed to fit the IFMR.
 Edit this file to fit the IFMR of your choice.
-* plot_IFMR.py: plot outputs from an MCMC run.
+* plot_IFMR.py: plot outputs from an MCMC run. Use with -h or --help to list
+all available options.
 * Mi_from_Mf.py: Given a white dwarf mass and it's uncertainty, calculate the
 initial mass and pre-WD lifetime and their uncertainties. Uses a Bayesian
-approach and takes into account uncertainty in the IFMR itself.
+approach and takes into account uncertainty in the IFMR itself. Use with -h
+or --help to see all available options.
+
+## Installation
+Simply clone this repository to get all available scripts and data.
 
 ## Dependencies
 * python version >=3.9
