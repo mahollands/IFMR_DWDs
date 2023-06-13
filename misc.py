@@ -16,7 +16,9 @@ def pairwise(iterable):
     return zip(a, b)
 
 def load_fitted_IFMR(fname):
-    fname = fname.remove_prefix(f"{MCMC_DIR}/")
+    fname = fname.removeprefix(f"{MCMC_DIR}/")
+    fname = fname.removesuffix(f"_chain.npy")
+    fname = fname.removesuffix(f"_lnprob.npy")
     with open("MCMC_meta.dat") as F:
         for line in F:
             fname_chain, ifmr_x_str = line.split(" : ")
