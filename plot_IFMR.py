@@ -1,21 +1,35 @@
 #!/usr/bin/env python
+import argparse
 import numpy as np
 import corner
 import matplotlib.pyplot as plt
 from misc import load_fitted_IFMR
 
-BURN = -10
-PLOT_CHAINS = True
-PLOT_CORNER = True
-CORNER_HYPER = False
-PLOT_IFMR = True
+parser = argparse.ArgumentParser()
+parser.add_argument("filename", type=str, default="IFMR_MCMC_230605", nargs='?',
+    help="Filename of the IFMR fit (chain or lnprob acceptable)")
+parser.add_argument("--burn", type=int, default=100, \
+    help="Number of steps to use for MCMC, burning the rest")
+parser.add_argument("--thin", type=int, default=5, \
+    help="Thinning factor for MCMC steps")
+parser.add_argument("--plot_chains", dest="chains", action="store_const", \
+    const=True, default=False,
+    help="Make figure of MCMC chains")
+parser.add_argument("--plot_corner", dest="corner", action="store_const", \
+    const=True, default=False,
+    help="Make corner plot of IFMR")
+parser.add_argument("--corner_hyper", dest="hyper", action="store_const", \
+    const=True, default=False,
+    help="Make corner plot only show hyperparameters")
+parser.add_argument("--plot_ifmr", dest="ifmr", action="store_const", \
+    const=True, default=False,
+    help="Make IFMR plot")
+args = parser.parse_args()
 
-ifmr_x, chain, lnp = load_fitted_IFMR("IFMR_MCMC_230605")
-ifmr_x, chain, lnp = load_fitted_IFMR("IFMR_MCMC_MCh_230609")
-#ifmr_x, chain, lnp = load_fitted_IFMR("IFMR_MCMC_outliers_monoML_230519")
+ifmr_x, chain, lnp = load_fitted_IFMR(args.filename)
 chain[:,:,2] *= 100
 
-final = chain[:,BURN::5,:].reshape((-1, chain.shape[-1]))
+final = chain[:,-args.burn::args.thin,:].reshape((-1, chain.shape[-1]))
 best_coords = np.where(lnp == lnp.max())
 best = chain[best_coords[0][0], best_coords[1][0]]
 
@@ -90,21 +104,21 @@ def IFMR_figure(final):
 if __name__ == "__main__":
     for idim, label in enumerate(labels):
         pcs = [np.percentile(final[:,idim], pc) for pc in (16, 50, 84)]
-        args = label, pcs[1], *np.diff(pcs), best[idim]
-        print("{} {:.3f}_-{:.3f}^+{:.3f} {:.3f}".format(*args))
+        f_args = label, pcs[1], *np.diff(pcs), best[idim]
+        print("{} {:.3f}_-{:.3f}^+{:.3f} {:.3f}".format(*f_args))
 
-    if PLOT_CHAINS:
+    if args.chains:
         chain_figure(chain, final, Ndim, Nwalkers)
         #lnprob_figure(lnp, Nwalkers)
 
-    if PLOT_CORNER:
-        data = chain[:,BURN::1,:4] if CORNER_HYPER else chain[:,BURN::1,:]
-        labels_ = labels[:4] if CORNER_HYPER else labels
+    if args.corner:
+        chain = chain[:,-args.burn::args.thin,:]
+        data, labels_ = (chain[:,:,:4], labels[:4]) if args.hyper else (chain, labels)
         data = data.reshape((data.shape[0]*data.shape[1], data.shape[2]))
         corner.corner(data, bins=50, labels=labels_, quantiles=[0.16, 0.50, 0.84], \
             color='#333333')
         plt.savefig("figures/IFMR_corner.png", dpi=200)
         plt.show()
 
-    if PLOT_IFMR:
+    if args.ifmr:
         IFMR_figure(final)
