@@ -4,33 +4,24 @@ import corner
 import matplotlib.pyplot as plt
 from misc import load_fitted_IFMR
 
-BURN = -100
-PLOT_CHAINS = False
+BURN = -10
+PLOT_CHAINS = True
 PLOT_CORNER = True
 CORNER_HYPER = False
 PLOT_IFMR = True
-OUTLIERS = True
-SIMULATED = False
 
-if OUTLIERS and SIMULATED:
-    from simulated_population import IFMR_true, TEFF_ERR, LOGG_ERR, \
-        SIGMA_OUTLIER, P_outlier_true
-    params_true = [P_outlier_true, SIGMA_OUTLIER, TEFF_ERR, LOGG_ERR, *IFMR_true.y]
-
-#ifmr_x, chain, lnp = load_fitted_IFMR("IFMR_MCMC_outliers_230511_extend01")
+ifmr_x, chain, lnp = load_fitted_IFMR("IFMR_MCMC_230605")
+ifmr_x, chain, lnp = load_fitted_IFMR("IFMR_MCMC_MCh_230609")
 #ifmr_x, chain, lnp = load_fitted_IFMR("IFMR_MCMC_outliers_monoML_230519")
-#ifmr_x, chain, lnp = load_fitted_IFMR("IFMR_MCMC_outliers_Mch_230522")
-ifmr_x, chain, lnp = load_fitted_IFMR("IFMR_MCMC_nonMono_230525")
+chain[:,:,2] *= 100
 
 final = chain[:,BURN::5,:].reshape((-1, chain.shape[-1]))
 best_coords = np.where(lnp == lnp.max())
 best = chain[best_coords[0][0], best_coords[1][0]]
 
 Nwalkers, Nstep, Ndim = chain.shape
-labels = ["Teff_err", "logg_err"] \
+labels = ["P_outlier", "scale_outlier", "Teff_err", "logg_err"] \
     + [f"$y_{{{x}}}$: ${Mi:.1f}\,M_\odot$" for x, Mi in enumerate(ifmr_x, 1)]
-if OUTLIERS:
-    labels = ["P_outlier", "scale_outlier"] + labels
 
 ########################################
 # Make figures of chains and corner plot
@@ -42,10 +33,8 @@ def chain_figure(chain, final, Ndim, Nwalkers):
         for iwalker in range(min(Nwalkers, 1000)):
             plt.plot(chain[iwalker,:,idim], 'k-', alpha=0.05)
         plt.plot(np.median(chain[:,:,idim], axis=0), 'r-')
-        for pc in (16, 84):
+        for pc in (2.3, 15.9, 84.1, 97.7):
             plt.plot(np.percentile(chain[:,:,idim], pc, axis=0), 'C1-')
-        if OUTLIERS and SIMULATED:
-            plt.axhline(params_true[idim], c='b', ls=':')
         plt.ylabel(label)
     plt.tight_layout()
     plt.savefig("figures/IFMR_chains.png", dpi=200)
@@ -69,12 +58,10 @@ def IFMR_figure(final):
         plt.axvline(x, c='C3', ls=':', alpha=0.5)
     for ifmr_y in final_:
         plt.plot(ifmr_x, ifmr_y, 'k-', alpha=0.05)
-    for pc in (2.5, 16, 84, 97.5):
+    for pc in (2.3, 15.9, 84.1, 97.7):
         plt.plot(ifmr_x, np.percentile(final_, pc, axis=0), 'C1-')
     plt.plot(ifmr_x, np.median(final_, axis=0), 'r-', lw=1.5)
     plt.plot(ifmr_x, best_, '#00FF00', lw=2, ls=':')
-    if SIMULATED:
-        plt.plot(IFMR_true.x, IFMR_true.y, 'b-')
     plt.plot([0, 8], [0., 8.], 'b:')
     plt.axhline(1.4, c='r', ls=':')
     plt.xlim(0, 8)
@@ -91,8 +78,6 @@ def IFMR_figure(final):
         plt.plot(ifmr_x, np.percentile(final_, pc, axis=0)/ifmr_x, 'C1-')
     plt.plot(ifmr_x, np.median(final_, axis=0)/ifmr_x, 'r-', lw=1.5)
     plt.plot(ifmr_x, best_/ifmr_x, '#00FF00', lw=2, ls=':')
-    if SIMULATED:
-        plt.plot(IFMR_true.x, IFMR_true.Mf_Mi, 'b-')
     plt.xlim(0, 8)
     plt.ylim(0, 1.0)
     plt.xlabel("$M_i$ [M$_\odot$]")
