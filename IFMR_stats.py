@@ -91,9 +91,9 @@ def loglike_DWD(params, DWD, IFMR, outliers=False, return_logL_coeval=False):
         Teff_err, logg_err = params
         loglike_Mf12_ = loglike_Mf12
     covMdtau = DWD.covMdtau_systematics(Teff_err, logg_err)
-    covM = covMdtau[:2,:2]
 
     if conf.MONOTONIC_IFMR:
+        covM = covMdtau[:2,:2]
         Mf12 = DWD.draw_Mf_samples(covM, IFMR, conf.N_MARGINALISE)
         if Mf12.shape[1] <= 1:
             return -np.inf
