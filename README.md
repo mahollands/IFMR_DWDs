@@ -15,8 +15,8 @@ Hyper-parameters are the two initial masses for the system.
 Edit this file to fit the IFMR of your choice.
 * plot_IFMR.py: plot outputs from an MCMC run.
 * Mi_from_Mf.py: Given a white dwarf mass and it's uncertainty, calculate the
-initial mass and pre-WD lifetime and their uncertainties. Takes into account
-uncertainty in the IFMR itself.
+initial mass and pre-WD lifetime and their uncertainties. Uses a Bayesian
+approach and takes into account uncertainty in the IFMR itself.
 
 ## Dependencies
 * python version >=3.9

@@ -10,3 +10,4 @@ plot_ifmr_dwd.py
 plot_ifmr_talk.py
 MCMC_meta.dat
 testing_*.py
+.Mi_from_Mf_legacy.py
