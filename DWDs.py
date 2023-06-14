@@ -304,6 +304,7 @@ bad_DWDs = {
         "runC_WDJ0002+0733AB", #A component poor fit to phot due to magnetism
         "runC_WDJ0007-1605AB", #A component poor phot fit -- possibly He atm
         "runC_WDJ2122+3005AB", #B component v. low mass and A component has He atm
+        "runD_WDJ1014+0305AB", #Both objects v. low mass
         "runD_WDJ1211-4551AB", #B component v. low mass
         "runD_WDJ1350-5025AB", #A component has a He atm or strongly magnetic
         "runD_WDJ1557-3832AB", #both components v. low mass
