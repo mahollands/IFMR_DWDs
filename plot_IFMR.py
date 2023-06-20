@@ -24,6 +24,9 @@ parser.add_argument("--corner_hyper", dest="hyper", action="store_const", \
 parser.add_argument("--plot_ifmr", dest="ifmr", action="store_const", \
     const=True, default=False,
     help="Make IFMR plot")
+parser.add_argument("--plot_all", dest="all_figs", action="store_const", \
+    const=True, default=False,
+    help="Show all chains/corner/ifmr figures")
 args = parser.parse_args()
 
 ifmr_x, chain, lnp = load_fitted_IFMR(args.filename)
@@ -107,11 +110,11 @@ if __name__ == "__main__":
         f_args = label, pcs[1], *np.diff(pcs), best[idim]
         print("{} {:.3f}_-{:.3f}^+{:.3f} {:.3f}".format(*f_args))
 
-    if args.chains:
+    if args.chains or args.all_figs:
         chain_figure(chain, final, Ndim, Nwalkers)
         #lnprob_figure(lnp, Nwalkers)
 
-    if args.corner:
+    if args.corner or args.all_figs:
         chain = chain[:,-args.burn::args.thin,:]
         data, labels_ = (chain[:,:,:4], labels[:4]) if args.hyper else (chain, labels)
         data = data.reshape((data.shape[0]*data.shape[1], data.shape[2]))
@@ -120,5 +123,5 @@ if __name__ == "__main__":
         plt.savefig("figures/IFMR_corner.png", dpi=200)
         plt.show()
 
-    if args.ifmr:
+    if args.ifmr or args.all_figs:
         IFMR_figure(final)
