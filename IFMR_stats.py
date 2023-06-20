@@ -30,7 +30,7 @@ def loglike_Mf12(Mf12, tau12_pre, Mdtau, covMdtau, IFMR, scale_outlier=None):
     return stats.multivariate_normal.logpdf(X.T, mean=Mdtau, cov=cov_)
 
 def loglike_Mf12_mixture(Mf12, tau12_pre, Mdtau, covMdtau, IFMR, P_outlier, \
-    scale_outlier, return_logL_coeval=False):
+    scale_outlier, return_logL0=False):
     """
     Computes the likelihood of an IFMR and initial masses for one DWD with
     measured final masses and difference in WD cooling ages (and their
@@ -38,24 +38,24 @@ def loglike_Mf12_mixture(Mf12, tau12_pre, Mdtau, covMdtau, IFMR, P_outlier, \
     outliers drawn from a broader dtau_c distribution.
     """
     args = Mf12, tau12_pre, Mdtau, covMdtau, IFMR
-    logL_coeval  = loglike_Mf12(*args)
+    logL0  = loglike_Mf12(*args)
     logL_outlier = loglike_Mf12(*args, scale_outlier=scale_outlier)
 
-    if isinstance(logL_coeval, np.ndarray):
-        logL_coeval[np.isnan(logL_coeval)] = -np.inf
+    if isinstance(logL0, np.ndarray):
+        logL0[np.isnan(logL0)] = -np.inf
         logL_outlier[np.isnan(logL_outlier)] = -np.inf
     else:
-        if np.isnan(logL_coeval):
-            logL_coeval = -np.inf
+        if np.isnan(logL0):
+            logL0 = -np.inf
         if np.isnan(logL_outlier):
             logL_outlier = -np.inf
 
-    logL_coeval += log1p(-P_outlier)
+    logL0 += log1p(-P_outlier)
     logL_outlier += log(P_outlier)
-    logL_total = np.logaddexp(logL_coeval, logL_outlier)
+    logL_total = np.logaddexp(logL0, logL_outlier)
 
-    if return_logL_coeval:
-        return logL_total, logL_coeval
+    if return_logL0:
+        return logL_total, logL0
     return logL_total
 
 @numba.vectorize
@@ -78,7 +78,7 @@ def logprior_tau12(tau12_pre, tau12_c, tau12_cov):
     p1, p2 = erfc((tau12_total-t_universe)/np.sqrt(2*tau12v))
     return np.log(np.abs(p1*p2))
 
-def loglike_DWD(params, DWD, IFMR, outliers=False, return_logL_coeval=False):
+def loglike_DWD(params, DWD, IFMR, outliers=False, return_logL0=False):
     """
     log of marginal distribution:
     P(DWD | IFMR, theta) = \\iint P(Mi1, Mi2, DWD | IFMR, theta) dMi1 dMi2
@@ -116,9 +116,9 @@ def loglike_DWD(params, DWD, IFMR, outliers=False, return_logL_coeval=False):
         log_prior += logprior_tau12(tau12_pre, DWD.tau12, covtau)
 
     #importance sampling
-    if outliers and return_logL_coeval:
+    if outliers and return_logL0:
         log_like = loglike_Mf12_(Mf12, tau12_pre, DWD.Mdtau, covMdtau, IFMR, \
-            return_logL_coeval=True)
+            return_logL0=True)
         log_integrand = log_prior[np.newaxis,:] + np.array(log_like) \
         + log_weights[np.newaxis,:]
         return logsumexp(log_integrand, axis=1, b=np.abs(jac1*jac2)) \
