@@ -5,6 +5,7 @@ import numpy as np
 
 MCMC_DIR = "MCMC_output"
 METAFILE = "MCMC_meta.dat"
+ifmr_x_default = np.array([0.75, 1, 1.25, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6, 8])
 
 def is_sorted(arr):
     return np.all(arr[1:] >= arr[:-1])
@@ -26,8 +27,7 @@ def load_fitted_IFMR(fname):
     lnp = np.load(f"{MCMC_DIR}/{fname}_lnprob.npy")
     
     if not os.path.exists(METAFILE):
-        ifmr_x = np.array([0.75, 1, 1.25, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6, 8])
-        return ifmr_x, chain, lnp
+        return ifmr_x_default, chain, lnp
 
     with open(METAFILE) as F:
         for line in F:
@@ -36,7 +36,7 @@ def load_fitted_IFMR(fname):
                 ifmr_x = np.array(ast.literal_eval(ifmr_x_str))
                 break
         else:
-            raise ValueError(f"Could not find meta data for {fname}")
+            ifmr_x = ifmr_x_default
     return ifmr_x, chain, lnp
 
 def write_fitted_IFMR(fname, ifmr_x, sampler):
