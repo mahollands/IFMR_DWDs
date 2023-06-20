@@ -6,7 +6,6 @@ in the final mass and the IFMR itself.
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.special import logsumexp
 from scipy import stats
 from IFMR_tools import IFMR_cls, MSLT
 from misc import load_fitted_IFMR
