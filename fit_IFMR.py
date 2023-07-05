@@ -12,10 +12,10 @@ import IFMR_config as cfg
 
 ###########################################################################
 
-if cfg.f_continue_from:
-    ifmr_x, chain, _ = load_fitted_IFMR(cfg.f_continue_from)
-    pos0 = chain[:,-1,:]
-else:
+def initialise_walkers():
+    if cfg.f_continue_from:
+        ifmr_x, chain, _ = load_fitted_IFMR(cfg.f_continue_from)
+        return ifmr_x, chain[:,-1,:]
     ifmr_x = np.array(cfg.ifmr_x)
     ifmr_y_ = (1.4-0.4)/(8-0.5) * (ifmr_x-0.5) + 0.4
     pos0 = np.array([
@@ -25,13 +25,14 @@ else:
         np.sqrt(invgamma.rvs(a=1, scale=cfg.S_g/2, size=cfg.Nwalkers)), #logg_err
     ] + [np.random.normal(mf, 0.01, cfg.Nwalkers) for mf in ifmr_y_] #IFMR
     ).T
-Ndim = pos0.shape[1]
+    return ifmr_x, pos0
 
-def run_MCMC(DWDs, pos0):
+def run_MCMC(DWDs, ifmr_x, pos0):
     print(cfg.f_MCMC_out)
     print(f"Fitting IFMR with {len(DWDs)} DWDs")
 
     ##Run MCMC
+    Ndim = pos0.shape[1]
     with Pool(cfg.N_CPU) as pool:
         sampler = emcee.EnsembleSampler(cfg.Nwalkers, Ndim, logpost_DWDs, \
             args=(DWDs, ifmr_x, True), pool=pool)
@@ -41,4 +42,5 @@ def run_MCMC(DWDs, pos0):
 
 if __name__ == "__main__":
     DWDs = load_DWDs(cfg.f_DWDs, exclude_set=bad_DWDs[cfg.exclude_set])
-    run_MCMC(DWDs, pos0)
+    ifmr_x, pos0 = initialise_walkers()
+    run_MCMC(DWDs, ifmr_x, pos0)
