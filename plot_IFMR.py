@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from misc import load_fitted_IFMR
 
 parser = argparse.ArgumentParser()
-parser.add_argument("filename", type=str, default="IFMR_MCMC_230605", nargs='?',
+parser.add_argument("filename", type=str, default="IFMR_MCMC_230614", nargs='?',
     help="Filename of the IFMR fit (chain or lnprob acceptable)")
 parser.add_argument("--burn", type=int, default=100, \
     help="Number of steps to use for MCMC, burning the rest")
