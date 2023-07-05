@@ -38,7 +38,7 @@ best = chain[best_coords[0][0], best_coords[1][0]]
 
 Nwalkers, Nstep, Ndim = chain.shape
 labels = ["P_outlier", "scale_outlier", "Teff_err", "logg_err"] \
-    + [f"$y_{{{x}}}$: ${Mi:.1f}\,M_\odot$" for x, Mi in enumerate(ifmr_x, 1)]
+    + [f"$y_{{{x}}}$: ${Mi:.2f}\,M_\odot$" for x, Mi in enumerate(ifmr_x, 1)]
 
 ########################################
 # Make figures of chains and corner plot
