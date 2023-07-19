@@ -65,11 +65,10 @@ class IFMR_cls(interp1d):
         """
         if len(ifmr_x) != len(angles) + 1:
             raise ValueError
-        ifmr_y = np.zeros_like(ifmr_x)
         phi0 = angles[0]
-        ifmr_y[0] = bperp/np.cos(phi0) + ifmr_x[0] * np.tan(phi0)
-        for i, (dx, phi) in enumerate(zip(np.diff(ifmr_x), angles)):
-            ifmr_y[i+1] = ifmr_y[i] + dx*np.tan(phi)
+        y0 = bperp/np.cos(phi0) + ifmr_x[0] * np.tan(phi0)
+        ifmr_y = y0 + np.cumsum(np.diff(ifmr_x)*np.tan(angles))
+        ifmr_y = np.hstack([y0, ifmr_y]) 
         return cls(ifmr_x, ifmr_y)
 
     def __repr__(self):
