@@ -1,6 +1,7 @@
 """
 Routines and classes for working with Initial-Final Mass-Relations.
 """
+from itertools import pairwise
 import numpy as np
 from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
@@ -40,6 +41,36 @@ class IFMR_cls(interp1d):
         dydx = np.diff(self.y, prepend=0)/np.diff(self.x, prepend=0)
         self.grad = interp1d(self.x, dydx, **ifmr_kw)
         self.inv_grad = interp1d(self.y, 1/dydx, **ifmr_kw)
+
+    @classmethod
+    def from_mc_pairs(cls, ifmr_x, mc_pairs):
+        """
+        Create a piecewise linear IFMR where each segment is defined
+        by a gradient and y-intercept.
+        """
+        if len(ifmr_x) != len(mc_pairs) + 1:
+            raise ValueError
+        ifmr_y = np.zeros_like(ifmr_x)
+        for i, ((x0, x1), (m, c)) in enumerate(zip(pairwise(ifmr_x), mc_pairs)):
+            y0, y1 = m*x0+c, m*x1+c
+            ifmr_y[i] = y0 if ifmr_y[i] == 0 else 0.5*(y0+ifmr_y[i])
+            ifmr_y[i+1] = y1
+        return cls(ifmr_x, ifmr_y)
+
+    @classmethod
+    def from_bperp_angles(cls, ifmr_x, bperp, angles):
+        """
+        Create a piecewise linear IFMR from a perpendicular distance and
+        set of angles (as in Andrews et al. 2015)
+        """
+        if len(ifmr_x) != len(angles) + 1:
+            raise ValueError
+        ifmr_y = np.zeros_like(ifmr_x)
+        phi0 = angles[0]
+        ifmr_y[0] = bperp/np.cos(phi0) + ifmr_x[0] * np.tan(phi0)
+        for i, (dx, phi) in enumerate(zip(np.diff(ifmr_x), angles)):
+            ifmr_y[i+1] = ifmr_y[i] + dx*np.tan(phi)
+        return cls(ifmr_x, ifmr_y)
 
     def __repr__(self):
         return "IFMR_cls({}, {})".format(list(self.x), list(self.y))
