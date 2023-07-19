@@ -1,6 +1,5 @@
 import os
 import ast
-from itertools import tee
 import numpy as np
 
 MCMC_DIR = "MCMC_output"
@@ -9,14 +8,6 @@ ifmr_x_default = np.array([0.75, 1, 1.25, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6, 8])
 
 def is_sorted(arr):
     return np.all(arr[1:] >= arr[:-1])
-
-def pairwise(iterable):
-    """
-    Roughly recreates the python 3.10 itertools.pairwise.
-    """
-    a, b = tee(iterable)
-    next(b, None)
-    return zip(a, b)
 
 def load_fitted_IFMR(fname):
     fname = fname.removeprefix(f"{MCMC_DIR}/")
