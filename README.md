@@ -28,3 +28,8 @@ Simply clone this repository to get all available scripts and data.
 * emcee (for running MCMC fits)
 * corner (for plotting MCMC results)
 * numpy, numba, matplotlib for maths and plotting
+
+## Data
+Shortened versions (last 100 steps) of our MCMC chains are included in the
+repository. The full chains (10000 steps, up to 2GB each) can be provided
+upon reasonable request.

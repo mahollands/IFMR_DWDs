@@ -15,7 +15,7 @@ parser.add_argument("Mf_mean", type=float, \
     help = "Central value of the white dwarf final mass in Msun")
 parser.add_argument("Mf_err", type=float, \
     help = "Uncertainty on the white dwarf final mass in Msun")
-parser.add_argument("--IFMR", type=str, default="IFMR_MCMC_Fit1", \
+parser.add_argument("--IFMR", type=str, default="Fit1", \
     help = "Name of the IFMR file to load")
 parser.add_argument("--clip_l", type=int, default=0, \
     help = "Number of IFMR points to clip from the left")
