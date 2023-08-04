@@ -5,7 +5,7 @@ IFMR. Then simply run the script 'fit_IFMR.py'.
 
 #######################################
 # Intial-mass grid for fitting the IFMR
-ifmr_x = [0.5, 0.75, 1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6, 8]
+ifmr_x = [0.75, 1, 1.25, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6, 8]
 
 #######################################
 # Switches for the IFMR Bayesian model
