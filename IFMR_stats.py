@@ -23,8 +23,8 @@ def loglike_Mf12(Mf12, tau12_preWD, Mdtau, covMdtau, IFMR, scale_outlier=None):
     covariance). This is optionally computed for either the coeval or outlier
     distributions.
     """
-    tau1_pre, tau2_pre = tau12_preWD
-    X, cov_ = np.vstack([Mf12, tau2_pre-tau1_pre]), np.copy(covMdtau)
+    tau1_preWD, tau2_preWD = tau12_preWD
+    X, cov_ = np.vstack([Mf12, tau2_preWD-tau1_preWD]), np.copy(covMdtau)
     if scale_outlier is not None:
         cov_[2,2] += scale_outlier**2
     return stats.multivariate_normal.logpdf(X.T, mean=Mdtau, cov=cov_)
@@ -74,8 +74,8 @@ def logprior_tau12(tau12_preWD, tau12_cool, tau12_cov):
     speed reasons.
     """
     tau12_total = tau12_preWD + tau12_cool[:,np.newaxis]
-    tau12v = np.diag(tau12_cov)[:,np.newaxis]
-    p1, p2 = erfc((tau12_total-t_universe)/np.sqrt(2*tau12v))
+    tau12_var = np.diag(tau12_cov)[:,np.newaxis]
+    p1, p2 = erfc((tau12_total-t_universe)/np.sqrt(2*tau12_var))
     return np.log(np.abs(p1*p2))
 
 def loglike_DWD(hyper_params, DWD, IFMR, outliers=False, return_logL0=False):
