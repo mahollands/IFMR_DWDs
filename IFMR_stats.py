@@ -78,17 +78,17 @@ def logprior_tau12(tau12_pre, tau12_c, tau12_cov):
     p1, p2 = erfc((tau12_total-t_universe)/np.sqrt(2*tau12v))
     return np.log(np.abs(p1*p2))
 
-def loglike_DWD(params, DWD, IFMR, outliers=False, return_logL0=False):
+def loglike_DWD(hyper_params, DWD, IFMR, outliers=False, return_logL0=False):
     """
     log of marginal distribution:
     P(DWD | IFMR, theta) = \\iint P(Mi1, Mi2, DWD | IFMR, theta) dMi1 dMi2
     """
     if outliers:
-        P_outlier, scale_outlier, Teff_err, logg_err = params
+        P_outlier, scale_outlier, Teff_err, logg_err = hyper_params
         loglike_Mf12_ = partial(loglike_Mf12_mixture, \
             P_outlier=P_outlier, scale_outlier=scale_outlier)
     else:
-        Teff_err, logg_err = params
+        Teff_err, logg_err = hyper_params
         loglike_Mf12_ = loglike_Mf12
     covMdtau = DWD.covMdtau_systematics(Teff_err, logg_err)
 
@@ -128,11 +128,11 @@ def loglike_DWD(params, DWD, IFMR, outliers=False, return_logL0=False):
     log_integrand = log_prior + log_like + log_weights
     return logsumexp(log_integrand, b=np.abs(jac1*jac2)) - log(conf.N_MARGINALISE)
 
-def loglike_DWDs(params, DWDs, IFMR, outliers=False):
+def loglike_DWDs(hyper_params, DWDs, IFMR, outliers=False):
     """
     log likelihood for IFMR (and hyperparams) for all DWDs
     """
-    return sum(loglike_DWD(params, DWD, IFMR, outliers=outliers) for DWD in DWDs)
+    return sum(loglike_DWD(hyper_params, DWD, IFMR, outliers=outliers) for DWD in DWDs)
 
 def logprior_IFMR(IFMR):
     """
@@ -158,16 +158,16 @@ def logprior_DWD(Mi12, IFMR):
     """
     return logprior_Mi12(*Mi12) + logprior_IFMR(IFMR)
 
-def logprior_DWDs(params, IFMR, outliers=False):
+def logprior_DWDs(hyper_params, IFMR, outliers=False):
     """
     priors on IFMR all and ifmr related parameters
     """
     if outliers:
-        P_outlier, scale_outlier, Teff_err, logg_err = params
+        P_outlier, scale_outlier, Teff_err, logg_err = hyper_params
         if not 0 < P_outlier < 1 or not 0 < scale_outlier < t_universe:
             return -np.inf
     else:
-        Teff_err, logg_err = params
+        Teff_err, logg_err = hyper_params
 
     if Teff_err < 0 or logg_err < 0:
         return -np.inf
@@ -185,8 +185,8 @@ def setup_params_IFMR(all_params, ifmr_x, outliers=False):
     Splits up a full array of parameters, returning a reduced set of parameters
     and an IFMR object.
     """
-    params, ifmr_y = np.split(all_params, [4 if outliers else 2])
-    return params, IFMR_cls(ifmr_x, ifmr_y)
+    hyper_params, ifmr_y = np.split(all_params, [4 if outliers else 2])
+    return hyper_params, IFMR_cls(ifmr_x, ifmr_y)
 
 def logpost_DWD(all_params, DWD, ifmr_x, Teff_err=0.01, logg_err=0.01):
     """
@@ -205,9 +205,9 @@ def logpost_DWDs(all_params, DWDs, ifmr_x, outliers=False):
     """
     Posterior distribution for fitting an IFMR to a list of DWDs
     """
-    params, IFMR = setup_params_IFMR(all_params, ifmr_x, outliers)
-    if not np.isfinite(lp := logprior_DWDs(params, IFMR, outliers)):
+    hyper_params, IFMR = setup_params_IFMR(all_params, ifmr_x, outliers)
+    if not np.isfinite(lp := logprior_DWDs(hyper_params, IFMR, outliers)):
         return -np.inf
-    if not np.isfinite(ll := loglike_DWDs(params, DWDs, IFMR, outliers)):
+    if not np.isfinite(ll := loglike_DWDs(hyper_params, DWDs, IFMR, outliers)):
         return -np.inf
     return lp + ll
