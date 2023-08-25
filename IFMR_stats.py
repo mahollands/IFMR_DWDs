@@ -16,28 +16,28 @@ import IFMR_config as conf
 log_weights_uniform = 2*log(8-0.5)
 t_universe = 13.8
 
-def loglike_Mf12(Mf12, tau12_pre, Mdtau, covMdtau, IFMR, scale_outlier=None):
+def loglike_Mf12(Mf12, tau12_preWD, Mdtau, covMdtau, IFMR, scale_outlier=None):
     """
     Computes the likelihood of an IFMR and initial masses for one DWD with
     measured final masses and difference in WD cooling ages (and their
     covariance). This is optionally computed for either the coeval or outlier
     distributions.
     """
-    tau1_pre, tau2_pre = tau12_pre
+    tau1_pre, tau2_pre = tau12_preWD
     X, cov_ = np.vstack([Mf12, tau2_pre-tau1_pre]), np.copy(covMdtau)
     if scale_outlier is not None:
         cov_[2,2] += scale_outlier**2
     return stats.multivariate_normal.logpdf(X.T, mean=Mdtau, cov=cov_)
 
-def loglike_Mf12_mixture(Mf12, tau12_pre, Mdtau, covMdtau, IFMR, P_outlier, \
+def loglike_Mf12_mixture(Mf12, tau12_preWD, Mdtau, covMdtau, IFMR, P_outlier, \
     scale_outlier, return_logL0=False):
     """
     Computes the likelihood of an IFMR and initial masses for one DWD with
     measured final masses and difference in WD cooling ages (and their
     covariance), and under the assumption of a fraction of systems being
-    outliers drawn from a broader dtau_c distribution.
+    outliers drawn from a broader dtau_cool distribution.
     """
-    args = Mf12, tau12_pre, Mdtau, covMdtau, IFMR
+    args = Mf12, tau12_preWD, Mdtau, covMdtau, IFMR
     logL0  = loglike_Mf12(*args)
     logL_outlier = loglike_Mf12(*args, scale_outlier=scale_outlier)
 
@@ -68,12 +68,12 @@ def logprior_Mi12(Mi1, Mi2):
         return -2.3*log(Mi1*Mi2) #Kroupa IMF for m>0.5Msun
     return -np.inf
 
-def logprior_tau12(tau12_pre, tau12_c, tau12_cov):
+def logprior_tau12(tau12_preWD, tau12_cool, tau12_cov):
     """
     Prior on total lifetime. Doesn't take into account covariance for
     speed reasons.
     """
-    tau12_total = tau12_pre + tau12_c[:,np.newaxis]
+    tau12_total = tau12_preWD + tau12_cool[:,np.newaxis]
     tau12v = np.diag(tau12_cov)[:,np.newaxis]
     p1, p2 = erfc((tau12_total-t_universe)/np.sqrt(2*tau12v))
     return np.log(np.abs(p1*p2))
@@ -107,24 +107,24 @@ def loglike_DWD(hyper_params, DWD, IFMR, outliers=False, return_logL0=False):
         jac1, jac2 = 1, 1
 
     #priors
-    tau12_pre = MSLT(Mi12)
+    tau12_preWD = MSLT(Mi12)
     log_prior = np.zeros(Mi12.shape[1])
     if conf.MI_PRIOR:
         log_prior += logprior_Mi12(*Mi12)
     if conf.TAU_PRIOR:
         covtau = DWD.covMtau_systematics(Teff_err, logg_err)[2:,2:]
-        log_prior += logprior_tau12(tau12_pre, DWD.tau12, covtau)
+        log_prior += logprior_tau12(tau12_preWD, DWD.tau12, covtau)
 
     #importance sampling
     if outliers and return_logL0:
-        log_like = loglike_Mf12_(Mf12, tau12_pre, DWD.Mdtau, covMdtau, IFMR, \
+        log_like = loglike_Mf12_(Mf12, tau12_preWD, DWD.Mdtau, covMdtau, IFMR, \
             return_logL0=True)
         log_integrand = log_prior[np.newaxis,:] + np.array(log_like) \
         + log_weights[np.newaxis,:]
         return logsumexp(log_integrand, axis=1, b=np.abs(jac1*jac2)) \
             - log(conf.N_MARGINALISE)
 
-    log_like = loglike_Mf12_(Mf12, tau12_pre, DWD.Mdtau, covMdtau, IFMR)
+    log_like = loglike_Mf12_(Mf12, tau12_preWD, DWD.Mdtau, covMdtau, IFMR)
     log_integrand = log_prior + log_like + log_weights
     return logsumexp(log_integrand, b=np.abs(jac1*jac2)) - log(conf.N_MARGINALISE)
 
