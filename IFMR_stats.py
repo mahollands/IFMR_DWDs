@@ -102,7 +102,7 @@ def loglike_DWD(hyper_params, DWD, IFMR, outliers=False, return_logL0=False):
         jac1, jac2 = IFMR.inv_grad(Mf12)
     else:
         Mi12 = np.random.uniform(0.5, 8, (2, conf.N_MARGINALISE))
-        log_weights = log_weights_uniform
+        log_weights = log_weights_uniform*np.ones(conf.N_MARGINALISE)
         Mf12 = IFMR(Mi12)
         jac1, jac2 = 1, 1
 
