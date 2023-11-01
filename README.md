@@ -17,8 +17,17 @@ Edit this file to fit the IFMR of your choice.
 all available options.
 * Mi_from_Mf.py: Given a white dwarf mass and it's uncertainty, calculate the
 initial mass and pre-WD lifetime and their uncertainties. Uses a Bayesian
-approach and takes into account uncertainty in the IFMR itself. Use with -h
-or --help to see all available options.
+approach and takes into account uncertainty in the IFMR itself. Use with -h or
+--help to see all available options.
+* data/DWDs_Teffs_loggs.pkl: A pickled dictionary for each of the 72 fitted
+DWDs in our sample. The keys are the obversation/system names. The values are
+an array of Teff/logg pairs, their covariance matrix, and pre-computed data to
+convert Teffs/loggs to masses and cooling ages (in particular the Jacobians to
+convert uncertainties), using data from Bedard et al. (2020). Note that
+WDJ1336-1620AB appears three times as "runA", "runD", and "runAD" for an
+averaged measurement. If you have your own observations, you can create your
+own pickled dictionary file, or provide the information directly to the
+routines/classes in DWDs.py.
 
 ## Installation
 Simply clone this repository to get all available scripts and data.
